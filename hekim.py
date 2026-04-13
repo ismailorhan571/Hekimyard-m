@@ -48,7 +48,7 @@ st.markdown("""
 # 2. ÜST KOMUTA PANELİ
 st.markdown(f"""
     <div class='main-header'>
-        <h1>TIBBİ KARAR ANALİZ MERKEZİ</h1>
+        <h1>TIBBİ KARAR ANALİZCİSİ</h1>
         <p>Geliştirici: İSMAİL ORHAN</p>
     </div>
     """, unsafe_allow_html=True)
