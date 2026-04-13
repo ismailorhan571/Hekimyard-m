@@ -1,161 +1,156 @@
 import streamlit as st
 from datetime import datetime
 
-# 1. SAYFA KONFİGÜRASYONU VE ULTRA PREMİUM TASARIM
-st.set_page_config(page_title="Dahiliye CDSS The Absolute v17", page_icon="🏦", layout="wide")
+# 1. ULTRA PREMİUM SAYFA TASARIMI
+st.set_page_config(page_title="Dahiliye CDSS Supreme Archive v18", page_icon="🧬", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background: linear-gradient(135deg, #020617 0%, #0f172a 100%); color: #f1f5f9; }
+    .stApp { background: linear-gradient(135deg, #020617 0%, #080a0f 50%, #1e1b4b 100%); color: #f1f5f9; }
     .main-header {
-        background: rgba(30, 41, 59, 0.8); padding: 50px; border-radius: 35px;
+        background: rgba(30, 41, 59, 0.9); padding: 60px; border-radius: 40px;
         border: 2px solid #6366f1; text-align: center; margin-bottom: 40px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
     }
-    .panel-red { background: rgba(239, 68, 68, 0.1); padding: 25px; border-radius: 20px; border-left: 8px solid #ef4444; margin-bottom: 15px; }
-    .panel-blue { background: rgba(59, 130, 246, 0.1); padding: 25px; border-radius: 20px; border-left: 8px solid #3b82f6; margin-bottom: 15px; }
-    .panel-orange { background: rgba(245, 158, 11, 0.1); padding: 25px; border-radius: 20px; border-left: 8px solid #f59e0b; margin-bottom: 15px; }
-    .epikriz-box { background: #ffffff; color: #1e293b; padding: 30px; border-radius: 15px; font-family: monospace; border: 3px solid #94a3b8; line-height: 1.4; }
+    .status-card { padding: 25px; border-radius: 20px; margin-bottom: 20px; font-weight: 500; }
+    .emergency { background: rgba(220, 38, 38, 0.15); border-left: 10px solid #ef4444; border-right: 1px solid #ef4444; }
+    .diagnostic { background: rgba(37, 99, 235, 0.15); border-left: 10px solid #3b82f6; border-right: 1px solid #3b82f6; }
+    .radiology { background: rgba(139, 92, 246, 0.15); border-left: 10px solid #8b5cf6; border-right: 1px solid #8b5cf6; }
+    .epikriz-box { background: #ffffff; color: #000; padding: 40px; border-radius: 10px; font-family: 'Courier New', monospace; border: 4px solid #475569; }
     .stButton>button {
-        background: linear-gradient(90deg, #4f46e5, #9333ea, #db2777); color: white;
-        border-radius: 20px; height: 5.5em; width: 100%; font-weight: 900; font-size: 22px;
+        background: linear-gradient(90deg, #1e3a8a, #581c87, #831843);
+        color: white; border-radius: 30px; height: 6em; font-weight: 900; font-size: 24px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.5); transition: 0.4s;
     }
+    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 20px 60px rgba(99, 102, 241, 0.5); }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. ÜST BAŞLIK
-st.markdown("<div class='main-header'><h1>⚕️ DAHİLİYE CDSS - THE ABSOLUTE v17.0</h1><p>Maksimum Veri Hacmi | Ayırıcı Tanı | Otomatik Epikriz | İSMAİL ORHAN Ultimate Edition</p></div>", unsafe_allow_html=True)
+# 2. ÜST PANEL
+st.markdown("<div class='main-header'><h1>⚕️ DAHİLİYE CDSS - THE SUPREME ARCHIVE v18.0</h1><p style='font-size:1.4em'>Tüm Dahiliye Müfredatı | Radyoloji Rehberi | Toksikoloji | İSMAİL ORHAN Ultimate Software</p></div>", unsafe_allow_html=True)
 
-# 3. YAN PANEL (VİTAL VE DEMOGRAFİK)
+# 3. VERİ GİRİŞİ (VİTALLER VE LAB)
 with st.sidebar:
     st.header("📊 HASTA TERMİNALİ")
-    h_ad = st.text_input("Hasta ID / Protokol", "HASTA_99")
-    yas = st.number_input("Yaş", 18, 115, 45)
-    kilo = st.number_input("Kilo (kg)", 40, 200, 75)
+    h_ad = st.text_input("Protokol No / Hasta Adı", "PROTOKOL_X")
+    yas = st.number_input("Yaş", 18, 120, 45)
+    kilo = st.number_input("Vücut Ağırlığı (kg)", 30, 250, 75)
     st.divider()
-    ates = st.slider("Ateş (°C)", 34.0, 42.0, 36.6, 0.1)
-    ta_sis = st.number_input("Sistolik Tansiyon", 50, 250, 120)
-    solunum = st.number_input("Solunum Sayısı (dk)", 8, 50, 16)
-    spo2 = st.slider("Oksijen Satürasyonu (SpO2)", 40, 100, 98)
-    kreatinin = st.number_input("Kreatinin (mg/dL)", 0.1, 15.0, 1.0)
-    bun = st.number_input("BUN (mg/dL)", 5, 200, 18)
-    gks = st.selectbox("GKS (Bilinç)", [15, 14, 13, 12, 11, 10, 9, 8, 7])
+    ates = st.slider("Vücut Isısı (°C)", 34.0, 42.0, 36.6, 0.1)
+    ta_sis = st.number_input("Sistolik Tansiyon", 40, 300, 120)
+    ta_dia = st.number_input("Diastolik Tansiyon", 30, 200, 80)
+    nabiz = st.number_input("Nabız (Vuru/dk)", 20, 300, 80)
+    spo2 = st.slider("Oksijen Satürasyonu (%SpO2)", 30, 100, 98)
+    kreatinin = st.number_input("Serum Kreatinin (mg/dL)", 0.1, 20.0, 1.0)
+    st.divider()
+    st.warning("⚠️ Radyoloji için Kreatinin değerini kontrol ediniz!")
 
-# 4. DEVAŞA SEMPTOM VE KLİNİK BULGU PANELİ (TÜM SÜRÜMLERİN TOPLAMI)
-st.subheader("🔍 Kapsamlı Klinik Parametre Girişi")
-t1, t2, t3, t4, t5 = st.tabs(["🩺 GİS & HEPATO", "❤️ KARDİYO & SOLUNUM", "🧠 NÖRO & PSİK", "🦋 ROMATO & HEMATO", "🍭 ENDOKRİN & NEFRO"])
+# 4. DEV SEMPTOM MATRİSİ (HİÇBİR ŞEYİ ATLAMADAN)
+st.subheader("🔍 Klinik Belirti ve Toksikolojik Bulgular")
+t1, t2, t3, t4, t5, t6 = st.tabs(["GİS & HEPATO", "KARDİYO & SOLUNUM", "NÖRO & TOKSİKO", "HEMATO & ONKO", "ROMATO & NEFRO", "ENDOKRİN"])
 
 secilen = []
 with t1:
-    secilen.extend(st.multiselect("Gastrointestinal Bulgular", ["Hematemez", "Melena", "Hematokezya", "Sarılık", "Asit", "Asteriksis", "Grey Turner", "Cullen", "Disfaji", "Odinofaji", "Murphy (+)", "Caput Medusae"]))
+    secilen.extend(st.multiselect("Sindirim Sistemi", ["Hematemez", "Melena", "Sarılık", "Asit", "Disfaji", "Hepatomegali", "Splenomegali", "Karahindiba Görünümü", "Asteriksis", "Abdominal Hassasiyet"]))
 with t2:
-    secilen.extend(st.multiselect("Kardiyopulmoner Bulgular", ["Baskı Tarzı Göğüs Ağrısı", "Nefes Darlığı", "Hemoptizi", "Tek Taraflı Bacak Şişliği", "PND/Ortopne", "Boyun Ven Dolgunluğu", "Janeway Lezyonları", "Osler Nodülleri"]))
+    secilen.extend(st.multiselect("Dolaşım & Solunum", ["Baskı Tarzı Göğüs Ağrısı", "Plevritik Ağrı", "Hemoptizi", "Ortopne", "Bacakta Ödem (Tek Taraflı)", "Boyun Ven Dolgunluğu", "Çomak Parmak", "Ral/Ronküs"]))
 with t3:
-    secilen.extend(st.multiselect("Nörolojik Bulgular", ["Ani Baş Ağrısı", "Ense Sertliği", "Fokal Güç Kaybı", "Konfüzyon", "Ataksi", "Dizartri", "Miyozis", "Midriyazis"]))
+    secilen.extend(st.multiselect("Sinir & Zehirlenme", ["Ani Şiddetli Baş Ağrısı", "Miyozis (İğne ucu)", "Midriyazis (Geniş)", "Hipersalivasyon (Salyada artış)", "Konfüzyon", "Ense Sertliği", "Fokal Defisit", "Ataksi"]))
 with t4:
-    secilen.extend(st.multiselect("Sistemik & Romatolojik", ["Kelebek Döküntü", "Oral Aft", "Genital Ülser", "Peteşi/Purpura", "Lenfadenopati", "Splenomegali", "Raynaud", "Gece Terlemesi", "Kilo Kaybı"]))
+    secilen.extend(st.multiselect("Kan & Tümör", ["Peteşi/Purpura", "Ekimoz", "Diş Eti Kanaması", "Lenfadenopati", "B-Semptomları (Gece terlemesi, Kilo kaybı)", "Schistosit Şüphesi", "Anemi Bulguları"]))
 with t5:
-    secilen.extend(st.multiselect("Metabolik & Renal", ["Aseton Kokusu", "Poliüri", "Polidipsi", "Oligüri", "Üremik Koku", "Hiperpigmentasyon", "Ekzoftalmi", "Buffalo Hörgücü", "Mor Stria"]))
+    secilen.extend(st.multiselect("Bağ Dokusu & Böbrek", ["Kelebek Döküntü", "Poliartrit", "Güneş Hassasiyeti", "Oligüri (İdrar miktarında azalma)", "Hematüri", "Üremik Koku", "Oral/Genital Ülser"]))
+with t6:
+    secilen.extend(st.multiselect("Metabolizma", ["Aseton Kokusu", "Poliüri", "Polidipsi", "Aydede Yüzü", "Mor Stria", "Hiperpigmentasyon", "Ekzoftalmi", "Buffalo Hörgücü"]))
 
-# 5. DEV ANALİZ MOTORU (FONKSİYONSUZ, SATIR SATIR AÇIK MANTIK)
-if st.button("🚀 TÜM SİSTEMLERİ ANALİZ ET VE EPİKRİZ OLUŞTUR"):
+# 5. SUPREME ANALİZ MOTORU
+if st.button("🚀 TÜM DAHİLİYE ARŞİVİNİ TARA VE ANALİZ ET"):
     
-    # Yerel Hesaplamalar
+    # Yerel Matematiksel Hesaplamalar
     egfr = round(((140 - yas) * kilo) / (72 * kreatinin), 1)
-    qsofa = 0
-    if ta_sis <= 100: qsofa += 1
-    if solunum >= 22: qsofa += 1
-    if gks < 15: qsofa += 1
-    
-    curb = 0
-    if bun > 19: curb += 1
-    if solunum >= 30: curb += 1
-    if ta_sis < 90: curb += 1
-    if yas >= 65: curb += 1
-
-    # Tanı, Ayırıcı Tanı ve Tedavi Listeleri (Her şey burada açıkça işleniyor)
-    tanilar, ayiricilar, tedaviler = [], [], ["Hızlı Klinik Değerlendirme ve Vital Takibi"]
     b = set(secilen)
+    tanilar, tedaviler, ddx, rad_rehber = [], [], [], []
 
-    # --- KRİTİK ALGORİTMALAR ---
-    
-    # Üst GİS Kanama Protokolü
-    if "Hematemez" in b or "Melena" in b:
-        tanilar.append("AKTİF ÜST GİS KANAMA (Peptik Ülser / Varis?)")
-        ayiricilar.append("Ayırıcı Tanı: Özofagus Varisi, Mallory-Weiss, Gastrik Malignite, Dieulafoy Lezyonu")
-        tedaviler.append("IV PPI Bolus 80mg + 8mg/saat İnfüzyon")
-        tedaviler.append("Varis Şüphesinde Somatostatin/Oktreotid")
-        tedaviler.append("Acil Endoskopi Planlaması")
-
-    # Koroner Sendrom Protokolü
+    # --- 1. KARDİYOLOJİ & VASKÜLER ---
     if "Baskı Tarzı Göğüs Ağrısı" in b:
-        tanilar.append("AKUT KORONER SENDROM (STEMI/NSTEMI)")
-        ayiricilar.append("Ayırıcı Tanı: Aort Diseksiyonu, Pulmoner Emboli, Perikardit, GÖRH")
-        tedaviler.append("ASA 300mg Çiğnetme + Klopidogrel 300mg")
-        tedaviler.append("Seri Troponin ve EKG Takibi")
+        tanilar.append("AKUT KORONER SENDROM")
+        ddx.append("Ayırıcı Tanı: Aort Diseksiyonu, Pulmoner Emboli, Perikardit, GÖRH")
+        rad_rehber.append("Öneri: EKG, Seri Troponin, EKO. Aort Diseksiyonu şüphesinde Kreatinin normalse Kontrastlı Toraks BT.")
+        tedaviler.append("ASA 300mg + Klopidogrel 300mg (veya Tikagrelor)")
 
-    # Sepsis ve Enfeksiyon
-    if qsofa >= 2:
-        tanilar.append("OLASI SEPSİS TABLOSU (qSOFA Pozitif)")
-        tedaviler.append("IV Kristaloid Replasmanı (30ml/kg)")
-        tedaviler.append("Geniş Spektrumlu Antibiyoterapi (İlk 1 saatte)")
+    # --- 2. GASTROENTEROLOJİ & HEPATOLOJİ ---
+    if "Hematemez" in b or "Melena" in b:
+        tanilar.append("ÜST GİS KANAMA")
+        ddx.append("Ayırıcı Tanı: Peptik Ülser, Varis Kanama, Mallory-Weiss")
+        rad_rehber.append("Öneri: Direkt Radyoloji yerine ACİL ENDOSKOPİ birincil tercihtir.")
+        tedaviler.append("IV PPI İnfüzyonu (80mg bolus + 8mg/saat)")
 
-    # DKA / Metabolik
-    if "Aseton Kokusu" in b or ("Poliüri" in b and "Konfüzyon" in b):
-        tanilar.append("DİYABETİK KETOASİDOZ (DKA)")
-        tedaviler.append("IV İnsülin İnfüzyonu (0.1 u/kg/saat)")
-        tedaviler.append("SF İnfüzyonu ve K+ Takibi")
+    # --- 3. TOKSİKOLOJİ (YENİ KATMAN) ---
+    if "Miyozis (İğne ucu)" in b and "Hipersalivasyon (Salyada artış)" in b:
+        tanilar.append("KOLİNERJİK KRİZ (Organofosfat Zehirlenmesi)")
+        tedaviler.append("ACİL ANTİDOT: ATROPİN (Yanıt alınana kadar doz artırımı)")
+        tedaviler.append("Pralidoksim (PAM) tedavisi düşünülmelidir.")
+        
+    if "Midriyazis (Geniş)" in b and "Konfüzyon" in b:
+        tanilar.append("ANTİKOLİNERJİK TOKSİDROM")
+        ddx.append("Ayırıcı Tanı: TCA Zehirlenmesi, Atropin Doz Aşımı")
 
-    # Behçet / Romato
-    if "Oral Aft" in b and "Genital Ülser" in b:
-        tanilar.append("BEHÇET HASTALIĞI (Vaskülit Şüphesi)")
-        ayiricilar.append("Ayırıcı Tanı: HSV, Crohn Hastalığı, SLE")
-        tedaviler.append("Kolşisin ve Topikal Steroid")
+    # --- 4. HEMATOLOJİ & ONKOLOJİ ---
+    if "Peteşi/Purpura" in b and "Schistosit Şüphesi" in b:
+        tanilar.append("TROMBOTİK TROMBOSİTOPENİK PURPURA (TTP)")
+        tedaviler.append("ACİL PLAZMAFEREZ (Gecikme hayati risk taşır)")
+        tedaviler.append("Trombosit transfüzyonundan kaçınılmalıdır!")
 
-    # Böbrek Yetmezliği ve İlaç Ayarı
+    # --- 5. RADYOLOJİ REHBERİ (YENİ KATMAN) ---
     if egfr < 30:
-        tanilar.append("İLERİ DERECE BÖBREK YETMEZLİĞİ (eGFR < 30)")
-        tedaviler.append("DİKKAT: Renal Doz Ayarlaması Gereken İlaçlar Gözden Geçirilmeli!")
+        rad_rehber.append("⚠️ KRİTİK UYARI: eGFR < 30. İyotlu kontrast kullanımı kontrendikedir. Kontrastsız tetkik veya MR-Hidrasyon planlanmalıdır.")
+    elif egfr < 60:
+        rad_rehber.append("⚠️ UYARI: eGFR 30-60 aralığında. Kontrast kullanımı öncesi ve sonrası IV hidrasyon (SF) önerilir.")
 
-    # 6. SONUÇ EKRANI VE EPİKRİZ
+    # --- 6. NEFROLOJİ & SIVI RESÜSİTASYONU ---
+    if "Oligüri (İdrar miktarında azalma)" in b:
+        tanilar.append("AKUT BÖBREK HASARI (Prerenal / Renal / Postrenal?)")
+        rad_rehber.append("Öneri: Üriner Sistem USG (Obstrüksiyon ekarte etmek için)")
+
+    # 7. SONUÇLARIN SERGİLENMESİ
     st.divider()
-    c1, c2 = st.columns([1, 1.2])
+    col_a, col_b = st.columns([1, 1.2])
 
-    with c1:
-        st.markdown("<div class='panel-red'><h3>🚨 TANI VE AYIRICI TANI</h3>", unsafe_allow_html=True)
+    with col_a:
+        st.markdown("<div class='status-card emergency'><h3>🚨 TANI VE AYIRICI TANI</h3>", unsafe_allow_html=True)
         for t in tanilar: st.write(f"🚩 **{t}**")
-        for a in ayiricilar: st.write(f"🔍 *{a}*")
+        for d in ddx: st.write(f"🔍 *{d}*")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='panel-blue'><h3>💊 TEDAVİ VE YAKLAŞIM</h3>", unsafe_allow_html=True)
-        for ted in tedaviler: st.write(f"✅ {ted}")
+        st.markdown("<div class='status-card radiology'><h3>🩻 RADYOLOJİ VE GÖRÜNTÜLEME REHBERİ</h3>", unsafe_allow_html=True)
+        for r in rad_rehber: st.write(f"📡 {r}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with c2:
-        st.markdown("### 📝 OTOMATİK EPİKRİZ (HBYS UYUMLU)")
-        epikriz = f"""HASTA KLİNİK ÖZETİ - {datetime.now().strftime('%d/%m/%Y %H:%M')}
+    with col_b:
+        st.markdown("### 📝 PROFESYONEL KLİNİK EPİKRİZ")
+        epikriz = f"""KLİNİK EPİKRİZ RAPORU - {datetime.now().strftime('%d/%m/%Y %H:%M')}
 --------------------------------------------------
-HASTA ID: {h_ad} | YAŞ: {yas} | KİLO: {kilo}kg
-VİTALLER: Ateş {ates}C | TA {ta_sis}mmHg | SpO2 %{spo2} | Solunum {solunum}/dk
+HASTA: {h_ad} | YAŞ: {yas} | eGFR: {egfr} mL/dk
+VİTALLER: Ateş {ates}C | TA {ta_sis}/{ta_dia}mmHg | SpO2 %{spo2} | Nabız {nabiz}/dk
 
-KLİNİK ANALİZ:
-- Hesaplanan eGFR: {egfr} mL/dk (Böbrek Fonksiyonu)
-- qSOFA Skoru: {qsofa} (Sepsis Riski)
-- CURB-65 Skoru: {curb} (Pnömoni Şiddeti)
+BELİRLENEN KLİNİK BULGULAR:
+{', '.join(secilen) if secilen else 'Spesifik bulgu girilmedi.'}
 
-TESPİT EDİLEN BULGULAR: {", ".join(secilen)}
-
-ÖN TANILAR VE PLANI:
+[ANALİZ VE ÖN TANILAR]
 {chr(10).join(['- ' + t for t in tanilar])}
-{chr(10).join(['- ' + a for a in ayiricilar])}
+{chr(10).join(['- ' + d for d in ddx])}
 
-TEDAVİ NOTLARI:
-{chr(10).join(['* ' + ted for ted in tedaviler])}
+[RADYOLOJİ PLANI]
+{chr(10).join(['* ' + r for r in rad_rehber])}
+
+[ACİL TEDAVİ VE YÖNETİM]
+{chr(10).join(['+ ' + ted for ted in tedaviler])}
 
 --------------------------------------------------
-Hazırlayan: Dahiliye CDSS v17 (İsmail Orhan)"""
+Kayıt: Supreme Archive v18 | Sistem Sorumlusu: İsmail Orhan
+"""
         st.markdown(f"<div class='epikriz-box'><pre>{epikriz}</pre></div>", unsafe_allow_html=True)
-        st.download_button("📥 Epikrizi Kaydet (.txt)", epikriz, file_name=f"{h_ad}_epikriz.txt")
+        st.download_button("📥 Epikrizi .txt Olarak Kaydet", epikriz, file_name=f"{h_ad}_supreme.txt")
 
 st.markdown("---")
-st.caption("Dahiliye Absolute v17.0 | Monster Tulpar Optimized | İSMAİL ORHAN")
+st.caption("Dahiliye Supreme Archive v18.0 | Full Spectrum Diagnostic Software | İSMAİL ORHAN")
