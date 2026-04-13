@@ -1,112 +1,120 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- PROFESYONEL ARAYÜZ AYARLARI ---
-st.set_page_config(page_title="Med-AI Pro Karar Destek", page_icon="🏥", layout="wide")
+# --- PROFESYONEL SAYFA AYARLARI ---
+st.set_page_config(page_title="Med-AI Karar Destek", page_icon="⚕️", layout="wide")
 
-# Kurumsal Tıbbi Tema CSS
+# Kurumsal Tıbbi Arayüz Tasarımı (CSS)
 st.markdown("""
     <style>
-    .main { background-color: #f4f7f9; }
-    .stApp { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    .medical-card {
-        background-color: white; padding: 20px; border-radius: 12px;
-        border: 1px solid #e0e6ed; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px;
+    .main { background-color: #f8fafc; }
+    .stApp { font-family: 'Inter', sans-serif; }
+    /* Kart Yapıları */
+    .med-container {
+        background-color: white; padding: 2rem; border-radius: 12px;
+        border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     }
+    /* Profesyonel Buton */
     .stButton>button {
-        background: linear-gradient(135deg, #0052cc 0%, #003d99 100%);
-        color: white; border-radius: 8px; font-weight: 600; height: 3.5em; border: none;
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        color: white; border: none; padding: 0.75rem 1.5rem;
+        border-radius: 8px; font-weight: 600; width: 100%; transition: all 0.2s;
     }
-    .ai-report-container {
-        background-color: #ffffff; border-left: 8px solid #0052cc;
-        padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    .stButton>button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+    /* Rapor Alanı */
+    .ai-report {
+        background-color: #ffffff; border-left: 6px solid #2563eb;
+        padding: 2rem; border-radius: 8px; margin-top: 2rem;
+        font-size: 1.1rem; line-height: 1.6; color: #1e293b;
     }
-    .critical-header { color: #d32f2f; font-weight: bold; border-bottom: 2px solid #d32f2f; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- AI MODÜLÜ (404 HATASI ÇÖZÜMÜ) ---
+# --- AI BAĞLANTISI (Hata Yakalama Geliştirildi) ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # 404 hatasını önlemek için en güncel model ismi
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    AI_STATUS = "Aktif"
+    # 404 hatası için tam yol kullanıyoruz: models/gemini-1.5-flash
+    model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
+    AI_READY = True
 except Exception as e:
-    AI_STATUS = f"Hata: {str(e)}"
+    AI_READY = False
+    AI_ERROR = str(e)
 
-# ÜST BİLGİ BARI
-st.markdown("<h1 style='color: #003d99; margin-bottom: 0;'>🏥 MED-AI KLİNİK ANALİZ PRO</h1>", unsafe_allow_html=True)
-st.write(f"Sistem Durumu: **{AI_STATUS}** | Geliştirici: **İsmail Orhan**")
+# --- ÜST PANEL ---
+st.markdown("<h1 style='color: #1e3a8a; margin-bottom: 0;'>⚕️ MED-AI KLİNİK DESTEK SİSTEMİ</h1>", unsafe_allow_html=True)
+st.markdown("<p style='color: #64748b;'>Profesyonel Tanı ve Analiz Modülü | v2.1 PRO</p>", unsafe_allow_html=True)
 st.divider()
 
-# ANA PANEL
-col_side, col_main = st.columns([1, 3])
+# --- ANA ARAYÜZ ---
+col_side, col_main = st.columns([1, 2.5], gap="large")
 
 with col_side:
-    st.markdown("### 📋 Hasta & Vital")
+    st.markdown("### 📋 Hasta Parametreleri")
     with st.container(border=True):
-        yas = st.number_input("Yaş", 0, 120, 45)
-        cinsiyet = st.selectbox("Cinsiyet", ["Erkek", "Kadın", "Belirtilmemiş"])
-        ates = st.number_input("Ateş (°C)", 35.0, 42.0, 36.6)
+        yas = st.number_input("Yaş", 0, 120, 30)
+        cinsiyet = st.selectbox("Cinsiyet", ["Erkek", "Kadın", "Diğer"])
+        st.divider()
+        st.markdown("**🩸 Vital Bulgular**")
+        ates = st.number_input("Ateş (°C)", 34.0, 42.0, 36.6, step=0.1)
+        nabiz = st.number_input("Nabız (bpm)", 30, 220, 80)
         spo2 = st.slider("SpO2 (%)", 70, 100, 98)
-        nabiz = st.number_input("Nabız", 30, 200, 80)
-        tansiyon = st.text_input("TA (Örn: 120/80)", "120/80")
+        ta = st.text_input("Tansiyon", "120/80")
 
 with col_main:
-    st.markdown("### 🔍 Klinik Semptom Seçimi")
+    st.markdown("### 🔍 Klinik Semptom Grupları")
     
-    # Semptomları sistemlere göre gruplandırdık (Daha Pro Görünüm)
-    s_tabs = st.tabs(["Genel/Enfeksiyon", "Kardiyo/Solunum", "Gastro/Genital", "Nöroloji"])
+    # Sistemlere göre ayırarak daha "PRO" bir görünüm sağlıyoruz
+    t1, t2, t3 = st.tabs(["Genel & Solunum", "Kardiyo & Gastro", "Nöro & Diğer"])
     
-    with s_tabs[0]:
-        c1, c2 = st.columns(2)
-        sym_genel = c1.multiselect("Genel", ["Halsizlik", "Kilo Kaybı", "Gece Terlemesi", "Yaygın Ağrı"])
-        sym_enf = c2.multiselect("Enfeksiyon", ["Yüksek Ateş", "Üşüme-Titreme", "Lenfadenopati"])
+    with t1:
+        s1, s2 = st.columns(2)
+        genel = s1.multiselect("Sistemik", ["Halsizlik", "Kilo Kaybı", "Ateş", "Lenfadenopati"])
+        solunum = s2.multiselect("Solunum", ["Dispne", "Öksürük", "Hemoptizi", "Wheezing"])
+    
+    with t2:
+        s3, s4 = st.columns(2)
+        kardiyo = s3.multiselect("Kardiyovasküler", ["Göğüs Ağrısı", "Çarpıntı", "Ödem", "Ortopne"])
+        gastro = s4.multiselect("Sindirim", ["Karın Ağrısı", "Bulantı/Kusma", "Melena", "Sarılık"])
         
-    with s_tabs[1]:
-        c3, c4 = st.columns(2)
-        sym_kardiyo = c3.multiselect("Kardiyovasküler", ["Göğüs Ağrısı", "Çarpıntı", "Ödem", "Senkop"])
-        sym_solunum = c4.multiselect("Solunum", ["Nefes Darlığı", "Öksürük", "Hemoptizi", "Hışıltı"])
+    with t3:
+        noro = st.multiselect("Nörolojik", ["Şiddetli Baş Ağrısı", "Bilinç Bulanıklığı", "Vertigo", "Parestezi"])
+        ek = st.multiselect("Ek Şikayetler", ["Dizüri", "Hematüri", "Döküntü", "Eklem Ağrısı"])
 
-    with s_tabs[2]:
-        c5, c6 = st.columns(2)
-        sym_gastro = c5.multiselect("Gastrointestinal", ["Karın Ağrısı", "Bulantı/Kusma", "Melena", "Sarılık"])
-        sym_uriner = c6.multiselect("Üriner/Genital", ["Dizüri", "Hematüri", "Yan Ağrısı"])
+    secilenler = genel + solunum + kardiyo + gastro + noro + ek
 
-    with s_tabs[3]:
-        sym_noro = st.multiselect("Nörolojik", ["Baş Ağrısı", "Bilinç Bulanıklığı", "Baş Dönmesi", "Güç Kaybı"])
-
-    all_sym = sym_genel + sym_enf + sym_kardiyo + sym_solunum + sym_gastro + sym_uriner + sym_noro
-
-    if st.button("📊 KLİNİK ANALİZİ VE TANILARI OLUŞTUR"):
-        if not all_sym:
-            st.error("Lütfen en az bir semptom seçiniz.")
-        elif "Hata" in AI_STATUS:
-            st.error(f"Yapay zeka bağlantı hatası: {AI_STATUS}. Lütfen Secrets ayarlarını kontrol edin.")
+    if st.button("ANALİZ RAPORUNU OLUŞTUR"):
+        if not secilenler:
+            st.warning("Lütfen analiz için en az bir semptom seçiniz.")
+        elif not AI_READY:
+            st.error(f"Yapay Zeka Bağlantı Hatası: {AI_ERROR}")
         else:
-            with st.spinner("AI Tıbbi Literatürü Analiz Ediyor..."):
+            with st.spinner("Tıbbi literatür taranıyor ve analiz ediliyor..."):
                 prompt = f"""
-                Sen bir kıdemli tıp doktoru asistanısın.
-                HASTA: Yaş {yas}, {cinsiyet}.
-                VİTALLER: Ateş {ates}, SpO2 %{spo2}, Nabız {nabiz}, TA {tansiyon}.
-                SEMPTOMLAR: {', '.join(all_sym)}.
+                Sen uzman bir hekim danışmanısın.
+                HASTA VERİLERİ: Yaş {yas}, {cinsiyet}.
+                VİTALLER: Ateş {ates}, Nabız {nabiz}, SpO2 %{spo2}, TA {ta}.
+                BELİRTİLER: {', '.join(secilenler)}.
                 
-                Lütfen bu verilerle profesyonel bir rapor oluştur:
-                1. ÖNCELİKLİ AYIRICI TANILAR (Gerekçeleriyle)
-                2. İSTENMESİ GEREKEN KAN PARAMETRELERİ (Spesifik markerlar dahil)
-                3. ÖNERİLEN GÖRÜNTÜLEME VE İLERİ TETKİKLER
-                4. KRİTİK UYARILAR (Red Flags)
+                Lütfen şu formatta profesyonel bir rapor hazırla:
+                # 🩺 OLASI ÖN TANILAR
+                (Nedenleriyle birlikte en az 3 ayırıcı tanı)
                 
-                Tıp dili kullan ve her bölümü net başlıklarla ayır.
+                # 🧪 İLERİ TETKİK ÖNERİLERİ
+                (Kan tahlilleri ve görüntüleme yöntemleri)
+                
+                # ⚠️ KRİTİK UYARILAR (RED FLAGS)
+                (Acil müdahale gerektiren durumlar)
+                
+                Tıp diline uygun, net ve akademik bir üslup kullan.
                 """
                 try:
                     response = model.generate_content(prompt)
-                    st.markdown("<div class='ai-report-container'>", unsafe_allow_html=True)
+                    st.markdown("<div class='ai-report'>", unsafe_allow_html=True)
                     st.markdown(response.text)
                     st.markdown("</div>", unsafe_allow_html=True)
                 except Exception as e:
-                    st.error(f"İşlem sırasında bir hata oluştu: {str(e)}")
+                    st.error(f"Rapor oluşturulurken bir hata oluştu: {str(e)}")
 
 st.divider()
-st.caption("© 2026 Med-AI Karar Destek Sistemleri | Bu uygulama bir tavsiye aracıdır, kesin tanı hekim sorumluluğundadır.")
+st.caption(f"Geliştirici: İsmail Orhan | Med-AI Karar Destek Sistemi © 2026")
