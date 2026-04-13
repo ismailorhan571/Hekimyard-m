@@ -1,6 +1,5 @@
 import streamlit as st
 import google.generativeai as genai
-import os
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(
@@ -10,85 +9,80 @@ st.set_page_config(
 )
 
 # --- GEMINI API ENTEGRASYONU ---
-# API Anahtarını Streamlit Secrets'tan alıyoruz (Local'de çalışırken os.getenv kullanabilirsin)
+# Streamlit Secrets üzerinden API anahtarını alıyoruz
+# Not: Localde çalışırken secrets.toml dosyasına veya kodun içine geçici olarak yazabilirsin.
 API_KEY = st.secrets.get("GEMINI_API_KEY") 
 
 if API_KEY:
-    genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-pro') # Tıbbi analiz için Pro modeli daha iyidir
+    try:
+        genai.configure(api_key=API_KEY)
+        # Hatanın çözümü için en stabil model olan flash kullanıldı
+        model = genai.GenerativeModel('gemini-1.5-flash') 
+    except Exception as e:
+        st.error(f"API Yapılandırma Hatası: {e}")
 else:
     st.error("Lütfen API anahtarınızı Streamlit Secrets içine 'GEMINI_API_KEY' adıyla ekleyin.")
 
 # --- SIDEBAR (YAN PANEL) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2785/2785482.png", width=100)
     st.title("Sistem Bilgileri")
-    st.info("""
-    Bu uygulama, hekimlerin tanı ve tetkik süreçlerine yardımcı olmak amacıyla geliştirilmiş bir **Karar Destek Sistemi**dir.
-    """)
+    st.info("Bu uygulama hekimler için bir klinik karar destek asistanıdır.")
     st.divider()
     st.write("### Geliştirici")
     st.success("**İSMAİL ORHAN**")
-    st.write("[GitHub Profilim](https://github.com/ismailorhan)") # Buraya kendi linkini ekle
+    st.markdown("[GitHub Profilim](https://github.com/ismailorhan)")
 
 # --- ANA ARAYÜZ ---
 st.title("⚕️ Akıllı Tanı ve Tetkik Asistanı")
 st.markdown("---")
 
-# Giriş Alanları: İki sütunlu yapı
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("📋 Hasta Temel Bilgileri")
-    yas = st.number_input("Yaş", min_value=0, max_value=120, step=1)
-    cinsiyet = st.selectbox("Cinsiyet", ["Erkek", "Kadın", "Belirtilmemiş"])
+    st.subheader("📋 Hasta Bilgileri")
+    yas = st.number_input("Yaş", min_value=0, max_value=120, value=25)
+    cinsiyet = st.selectbox("Cinsiyet", ["Erkek", "Kadın"])
     sikayet = st.text_area("Ana Şikayet ve Öykü", height=150, 
-                          placeholder="Örn: 3 gündür devam eden sağ alt kadran ağrısı, bulantı ve iştahsızlık...")
+                          placeholder="Örn: 2 gündür süren yaygın karın ağrısı...")
 
 with col2:
-    st.subheader("🔍 Muayene ve Özgeçmiş")
+    st.subheader("🔍 Muayene ve Geçmiş")
     fizik_muayene = st.text_area("Fizik Muayene Bulguları", height=100, 
-                               placeholder="Örn: Rebound (+) pozitif, defans mevcut, ateş 38.5...")
-    ozgecmis = st.text_area("Özgeçmiş ve Ek Hastalıklar", height=100, 
-                           placeholder="Örn: Bilinen DM ve HT mevcut. Daha önce kolesistektomi geçirmiş.")
+                               placeholder="Örn: Ateş 38.2, batın rahat...")
+    ozgecmis = st.text_area("Özgeçmiş", height=100, 
+                           placeholder="Örn: Bilinen bir hastalık yok...")
 
-# --- ANALİZ MANTIĞI ---
-if st.button("Vakayı Analiz Et ve Görüş Al"):
+# --- ANALİZ BUTONU ---
+if st.button("Vakayı Analiz Et"):
     if not sikayet:
-        st.warning("Lütfen analiz için en azından ana şikayeti giriniz.")
+        st.warning("Lütfen analiz için bir şikayet girin.")
+    elif not API_KEY:
+        st.error("API Anahtarı bulunamadı!")
     else:
-        with st.spinner('Gemini vaka üzerinde çalışıyor...'):
-            # Gemini'ye gönderilecek 'Prompt' tasarımı
+        with st.spinner('Gemini analiz ediyor...'):
             prompt = f"""
-            Sen uzman bir tıp doktoru asistanısın. Aşağıdaki hasta verilerini analiz et:
+            Sen uzman bir klinik asistansın. Aşağıdaki verileri değerlendir:
             
-            HASTA VERİLERİ:
+            VAKA:
             - Yaş/Cinsiyet: {yas} / {cinsiyet}
-            - Ana Şikayet: {sikayet}
-            - Fizik Muayene: {fizik_muayene}
+            - Şikayet: {sikayet}
+            - Muayene: {fizik_muayene}
             - Özgeçmiş: {ozgecmis}
             
-            Lütfen şu başlıklarla profesyonel bir rapor sun:
-            1. Olası Ön Tanılar (Diferansiyel Tanı)
-            2. İstenmesi Gereken Öncelikli Tetkikler (Laboratuvar ve Görüntüleme)
-            3. Ayırıcı Tanı İçin Kritik Sorular
-            4. Tedavi Yaklaşımı Önerisi (Genel Bilgilendirme Amaçlı)
-            
-            Not: Yanıtın sonuna 'Bu bir asistan görüşüdür, kesin tanı doktor kontrolündedir' notunu ekle.
+            LÜTFEN ŞU BAŞLIKLARLA YANITLA:
+            1. Olası Ön Tanılar
+            2. İstenmesi Gereken Tetkikler (Lab/Görüntüleme)
+            3. Kritik Uyarılar
             """
             
             try:
                 response = model.generate_content(prompt)
-                
-                st.markdown("### 🧬 Gemini Klinik Değerlendirme")
-                st.light_blue_area = st.info(response.text)
-                
-                # Çıktıyı PDF veya metin olarak kaydetme seçeneği (Opsiyonel)
-                st.download_button("Raporu İndir", response.text, file_name="klinik_rapor.txt")
-                
+                st.markdown("### 🧬 Klinik Değerlendirme")
+                st.write(response.text)
             except Exception as e:
-                st.error(f"Bir hata oluştu: {e}")
+                st.error(f"Analiz sırasında bir hata oluştu: {e}")
+                st.info("Hata kodu 404 ise lütfen model adının doğruluğunu veya API anahtarının yetkisini kontrol edin.")
 
 # --- FOOTER ---
 st.markdown("---")
-st.caption(f"© 2026 | Geliştirici: İSMAİL ORHAN | Streamlit & Gemini Pro Entegrasyonu")
+st.caption(f"© 2026 | Geliştirici: İSMAİL ORHAN | Klinik Karar Destek Sistemi")
