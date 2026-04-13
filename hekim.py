@@ -101,4 +101,87 @@ arsiv = {
         "bulgular": ["Asit", "Sarılık", "Hepatomegali", "Splenomegali", "Caput Medusae", "Asteriksis"],
         "tüp": "Sarı (Biyokimya), Mor (Hemogram), Mavi (INR), Buzda (Amonyak)",
         "doz": f"Spironolakton 100mg 1x1, Furosemid 40mg 1x1, Laktüloz 3x1.",
-        "not": "NSBB (Propranolol) eklemeyi düşün. Parasentez >5L ise 8g/L Albümin
+        "not": "NSBB (Propranolol) eklemeyi düşün. Parasentez >5L ise 8g/L Albümin ver."
+    },
+    "Diyabetik Ketoasidoz (DKA)": {
+        "bulgular": ["Aseton Kokusu", "Poliüri", "Polidipsi", "Konfüzyon"],
+        "tüp": "Kan Gazı Enjektörü, Sarı (Elektrolit), Mor (HbA1c)",
+        "doz": f"İnsülin İnfüzyon: {round(kilo*0.1, 1)} Ünite/Saat. Hidrasyon: %0.9 SF 1L/saat.",
+        "not": "K+ < 3.3 ise İnsülini durdur! Kan şekeri <250 olunca %5 Dekstroz ekle."
+    },
+    "Akut Pulmoner Emboli": {
+        "bulgular": ["Hemoptizi", "Unilateral Ödem", "Taşikardi", "Nefes Darlığı"],
+        "tüp": "Mavi (D-Dimer), Kan Gazı, Sarı (Troponin)",
+        "doz": f"Enoksaparin (Clexane) {kilo}mg 2x1 S.C. (eGFR <30 ise dozu %50 düşür!)",
+        "not": "RV yüklenmesi varsa Trombolitik (tPA) değerlendir."
+    },
+    "Feokromositoma": {
+        "bulgular": ["Ani Baş Ağrısı", "Terleme", "Çarpıntı", "Hipertansiyon"],
+        "tüp": "24 Saatlik İdrar, Sarı (Metanefrinler)",
+        "doz": "Alfa Bloker (Doksazosin) 1x1mg başlat.",
+        "not": "KRİTİK: Alfa bloker yapmadan asla Beta bloker verme!"
+    },
+    "Akut Pankreatit": {
+        "bulgular": ["Karın Ağrısı (Kuşak)", "Bulantı", "Hipotansiyon"],
+        "tüp": "Sarı (Amilaz/Lipaz - 3 kat artış tanısal)",
+        "doz": "Agresif IV Hidrasyon (Ringer Laktat tercih), Analjezi.",
+        "not": "Balthazar kriterleri için 72. saatte Kontrastlı BT planla."
+    }
+}
+
+# 7. ANALİZ MOTORU VE EPİKRİZ ÜRETİCİ
+if st.button("🚀 OMNI-İTYAPILARI ÇALIŞTIR VE ARŞİVLE"):
+    if not hepsi:
+        st.error("Lütfen klinik bulgu girişi yapınız.")
+    else:
+        st.divider()
+        sonuclar = []
+        for ad, d in arsiv.items():
+            eslesme = set(hepsi).intersection(set(d["bulgular"]))
+            if eslesme:
+                puan = round((len(eslesme) / len(d["bulgular"])) * 100, 1)
+                sonuclar.append({"ad": ad, "puan": puan, "veri": d, "esles": eslesme})
+        
+        sonuclar = sorted(sonuclar, key=lambda x: x['puan'], reverse=True)
+        
+        c1, c2 = st.columns([1.5, 1])
+        with c1:
+            st.markdown("### 📊 Klinik Analiz & Akıllı Dozaj")
+            for s in sonuclar:
+                st.markdown(f"""
+                <div class='diag-card'>
+                    <div style='font-size:1.6em; color:#58a6ff; font-weight:bold;'>{s['ad']} (%{s['puan']})</div>
+                    <p>🧪 <b>Laboratuvar (Tüp):</b> {s['veri']['tüp']}</p>
+                    <p>💉 <b>Hastaya Özel Doz ({kilo}kg):</b> {s['veri']['doz']}</p>
+                    <p style='color:#ff7b72;'>⚠️ <b>Hayati Klinik Not:</b> {s['veri']['not']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+        with c2:
+            st.markdown("### 📝 RESMİ KLİNİK EPİKRİZ")
+            radyo = "Kontrastlı uygundur" if egfr > 60 else "⚠️ KONTRASSIZ TETKİK / HİDRASYON ŞART"
+            epikriz = f"""TIBBİ ANALİZ VE KARAR RAPORU
+--------------------------------------------------
+HASTA: {yas}Y | {kilo}KG | eGFR: {egfr}
+GLİKOZ: {seker} | POTASYUM: {potasyum} | TA: {ta_sis}
+TARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}
+
+[KLİNİK BULGULAR]
+{", ".join(hepsi)}
+
+[ÖN TANILAR VE UYUM ORANI]
+{chr(10).join([f"- {x['ad']} (%{x['puan']})" for x in sonuclar[:5]])}
+
+[HEKİM YÖNETİM PLANI]
+- eGFR {egfr} nedeniyle {radyo}.
+- {"DİKKAT: Diyabetik acil yönetimi (DKA) öncelikli!" if seker > 300 else "Glisemi kontrolü sağlandı."}
+- {"DİKKAT: Hiperpotasemi için kalsiyum glukonat düşünülmelidir." if potasyum > 5.5 else "Elektrolitler stabil."}
+
+--------------------------------------------------
+SİSTEM GELİŞTİRİCİSİ: İSMAİL ORHAN
+"""
+            st.markdown(f"<div class='epikriz-paper'><pre>{epikriz}</pre></div>", unsafe_allow_html=True)
+            st.download_button("📥 Raporu PDF/TXT Olarak İndir", epikriz, file_name=f"{h_ad}_medical_report.txt")
+
+st.markdown("---")
+st.caption("İSMAİL ORHAN | The Ultimate Medical Infrastructure | Cumulative Edition")
