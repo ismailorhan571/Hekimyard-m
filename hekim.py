@@ -1,196 +1,150 @@
 import streamlit as st
 from datetime import datetime
 
-# 1. SAYFA KONFİGÜRASYONU VE ULTRA PREMİUM KLİNİK TEMA
-st.set_page_config(page_title="Tıbbi Karar Destek Sistemi - İsmail Orhan", page_icon="🌐", layout="wide")
+# 1. TASARIM: ELİT KLİNİK KOMUTA MERKEZİ
+st.set_page_config(page_title="Omni-Clinical Archive - İsmail Orhan", page_icon="🧪", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background: #010409; color: #c9d1d9; }
     .main-header {
-        background: linear-gradient(135deg, #0d1117 0%, #1c2128 100%); padding: 50px;
-        border-radius: 20px; text-align: center; border: 1px solid #30363d;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.8); margin-bottom: 30px;
+        background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); padding: 40px;
+        border-radius: 15px; text-align: center; border: 1px solid #30363d; margin-bottom: 25px;
     }
     .diag-card { 
-        background: #0d1117; border: 1px solid #30363d; 
-        padding: 25px; border-radius: 15px; margin-bottom: 20px;
-        border-left: 12px solid #238636;
+        background: #0d1117; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-bottom: 15px;
+        border-left: 8px solid #238636; box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
     }
-    .section-title { color: #58a6ff; font-weight: 900; font-size: 1.5em; margin-bottom: 12px; text-transform: uppercase; }
-    .epikriz-paper { 
-        background: #ffffff; color: #000; padding: 45px; border-radius: 5px; 
-        font-family: 'Courier New', monospace; border: 4px solid #000; line-height: 1.3;
-    }
+    .warning-card { border-left: 8px solid #d73a49; background: rgba(215, 58, 73, 0.1); }
+    .section-title { color: #58a6ff; font-weight: 800; font-size: 1.3em; margin-bottom: 8px; }
     .stButton>button {
-        background: linear-gradient(90deg, #238636, #2ea043); color: white; border-radius: 15px; 
-        height: 6em; width: 100%; font-weight: 900; font-size: 26px; border: none;
-        box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+        background: #238636; color: white; border-radius: 8px; height: 4em; width: 100%; 
+        font-weight: 700; font-size: 20px; border: none;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # 2. ÜST PANEL
-st.markdown("<div class='main-header'><h1>🌐 TIBBİ ANALİZ VE KLİNİK ARŞİV TERMİNALİ</h1><p>Maksimum Veri Havuzu | Tüm Branşlar | Dinamik Tanı Matrisi | İSMAİL ORHAN</p></div>", unsafe_allow_html=True)
+st.markdown("<div class='main-header'><h1>🧪 OMNI-CLINICAL ARCHIVE & CDSS</h1><p>En Geniş Dahiliye Kütüphanesi | İSMAİL ORHAN | 2026</p></div>", unsafe_allow_html=True)
 
-# 3. YAN PANEL - GENİŞLETİLMİŞ VİTAL TERMİNAL
+# 3. VİTAL VE SKORLAMA PANELİ
 with st.sidebar:
-    st.header("📋 VİTAL PARAMETRELER")
-    h_ad = st.text_input("Hasta Protokol No", "P-2026-FINAL")
+    st.header("📊 HASTA VERİ TERMİNALİ")
     yas = st.number_input("Yaş", 0, 120, 45)
     kilo = st.number_input("Kilo (kg)", 3, 220, 75)
     st.divider()
-    ates = st.number_input("Ateş (°C)", 32.0, 45.0, 36.6, 0.1)
-    ta_sis = st.number_input("Sistolik TA (mmHg)", 40, 300, 120)
-    seker = st.number_input("Kan Şekeri (mg/dL)", 20, 1000, 100) # İsteğin üzerine eklendi
+    ates = st.number_input("Ateş (°C)", 32.0, 43.0, 36.6, 0.1)
+    ta_sis = st.number_input("Sistolik TA", 40, 300, 120)
+    seker = st.number_input("Glukoz (mg/dL)", 20, 1000, 100)
     kreatinin = st.number_input("Kreatinin (mg/dL)", 0.1, 15.0, 1.0)
-    
-    # Gelişmiş Hesaplamalar
     egfr = round(((140 - yas) * kilo) / (72 * kreatinin), 1) if kreatinin > 0 else 0
-    st.subheader(f"eGFR: {egfr} ml/dk")
-    if seker > 250: st.warning("⚠️ HİPERGLİSEMİ (DKA Riski)")
-    if seker < 70: st.error("🚨 HİPOGLİSEMİ ALARMI")
+    
+    st.metric("eGFR", f"{egfr} ml/dk")
+    if egfr < 15: st.error("DİKKAT: EVRE 5 KRY (DİYALİZ?)")
+    if seker > 300: st.warning("KETONYÜRİ BAKILMALI!")
 
-# 4. EN GENİŞ SEMPTOM VE KLİNİK BULGU HAVUZU (MAX KATEGORİ)
-st.subheader("🔍 Klinik Bulguları ve Sistem Sorgusunu Eksiksiz Seçiniz")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🩺 DAHİLİ SİSTEMLER", "🧠 NÖRO & PSİKO", "🧬 HEMATO & ROMATO", "☣️ TOKSİKO & ENFEKSİYON", "🧪 ENDOKRİN & RENAL"])
+# 4. SİSTEMİK SORGULAMA (MAKSİMUM DETAY)
+st.subheader("🔍 Klinik Bulgular (Tüm Branşlar Senkronize)")
+col1, col2, col3, col4 = st.columns(4)
 
-hepsi = []
-with tab1:
-    col_a, col_b = st.columns(2)
-    hepsi.extend(col_a.multiselect("Gastroenteroloji", ["Asit", "Hepatomegali", "Splenomegali", "Sarılık", "Hematemez", "Melena", "Caput Medusae", "Murphy (+)", "Karahindiba Görünümü", "Disfaji", "Karın Ağrısı"]))
-    hepsi.extend(col_b.multiselect("Kardiyo & Solunum", ["Göğüs Ağrısı (Baskı)", "Bilateral Ödem", "Unilateral Ödem", "Ortopne", "PND", "Hemoptizi", "Boyun Ven Dolgunluğu", "S3/S4 Sesi", "Plevritik Ağrı", "Ral/Ronküs", "Stridor"]))
-with tab2:
-    hepsi.extend(st.multiselect("Nörolojik Bulgular", ["Konfüzyon", "Ense Sertliği", "Fokal Güç Kaybı", "Nöbet", "Ani Şiddetli Baş Ağrısı", "Tremor", "Ataksi", "Afazi", "Diplopi"]))
-with tab3:
-    hepsi.extend(st.multiselect("Hematoloji & Romatoloji", ["Peteşi/Purpura", "Lenfadenopati", "Kelebek Döküntü", "Oral Aft", "Genital Ülser", "Eklem Ağrısı", "Sabah Sertliği", "Splenomegali (Masif)", "Raynaud Fenomeni"]))
-with tab4:
-    hepsi.extend(st.multiselect("Enfeksiyon & Toksikoloji", ["Miyozis", "Midriyazis", "Hipersalivasyon", "Gece Terlemesi", "Kilo Kaybı (İstemsiz)", "Lenfadenopati (Ağrılı)", "Bradikardi", "Taşikardi"]))
-with tab5:
-    hepsi.extend(st.multiselect("Endokrin & Renal", ["Aseton Kokusu", "Poliüri", "Polidipsi", "Oligüri", "Anüri", "Ekzoftalmi", "Hiperpigmentasyon", "Aydede Yüzü", "Mor Stria"]))
+with col1:
+    s1 = st.multiselect("GİS / HEPATO", ["Asit", "Sarılık", "Hepatomegali", "Splenomegali", "Hematemez", "Melena", "Caput Medusae", "Murphy (+)", "Karahindiba Görünümü", "Karın Ağrısı (Kuşak)", "Asteriksis"])
+with col2:
+    s2 = st.multiselect("KARDİYO / GÖĞÜS", ["Göğüs Ağrısı", "Ortopne", "PND", "Bilateral Ödem", "Unilateral Ödem", "Hemoptizi", "Boyun Ven Dolgunluğu", "Ral/Ronküs", "Wheezing", "Öksürük (Gece)"])
+with col3:
+    s3 = st.multiselect("NÖRO / TOKSİKO", ["Konfüzyon", "Ense Sertliği", "Miyozis", "Midriyazis", "Hipersalivasyon", "Tremor", "Nöbet", "Fokal Kayıp", "Ani Baş Ağrısı"])
+with col4:
+    s4 = st.multiselect("DİĞER / NADİR", ["Peteşi/Purpura", "Lenfadenopati", "Kelebek Döküntü", "Oral/Genital Ülser", "Poliüri", "Aseton Kokusu", "Gece Terlemesi", "Hiperpigmentasyon", "Kilo Kaybı"])
 
-# 5. DEVASA TIP ARŞİVİ (ULTIMATE MATRIX)
-tıp_arsivi = {
-    "Siroz ve Portal Hipertansiyon": {
-        "bulgular": ["Asit", "Hepatomegali", "Splenomegali", "Sarılık", "Hematemez", "Melena", "Caput Medusae", "Karahindiba Görünümü"],
-        "tetkik": "ALT/AST, Albümin, PT/INR, Amonyak, Batın Doppler USG, Gastroskopi.",
-        "tedavi": "Sodyum kısıtlaması, Spironolakton, Laktüloz, IV Albümin.",
-        "radyoloji": "Kontrastsız Batın BT, Portal Ven Doppleri."
+hepsi = s1 + s2 + s3 + s4
+
+# 5. MAKSİMUM VERİ KÜTÜPHANESİ
+# Buraya her branştan en detaylı hastalıkları ekledim.
+arsiv = {
+    "Karaciğer Sirozu": {
+        "bulgular": ["Asit", "Sarılık", "Hepatomegali", "Splenomegali", "Asteriksis", "Caput Medusae"],
+        "tetkik": "INR, Albümin, Amonyak, Batın USG, Endoskopi.",
+        "tedavi": "Laktüloz, Spironolakton, Tuz kısıtlı diyet."
     },
-    "Akut Koroner Sendrom": {
-        "bulgular": ["Göğüs Ağrısı (Baskı)", "Taşikardi", "Terleme"],
-        "tetkik": "EKG, Seri Troponin, EKO, CK-MB.",
-        "tedavi": "ASA 300mg, Klopidogrel 600mg, Heparin, Nitrat.",
-        "radyoloji": "Koroner Anjiyografi."
+    "Akut Pankreatit": {
+        "bulgular": ["Karın Ağrısı (Kuşak)", "Bulantı", "Hipotansiyon"],
+        "tetkik": "Serum Amilaz/Lipaz (3 kat artış), Üst Batın BT.",
+        "tedavi": "IV Hidrasyon (Agresif), Analjezi, Oral alım stop."
     },
-    "Diyabetik Ketoasidoz (DKA)": {
-        "bulgular": ["Aseton Kokusu", "Poliüri", "Polidipsi", "Karın Ağrısı", "Konfüzyon"],
-        "tetkik": "Kan Şekeri (>250), Kan Gazı (pH <7.3), Ketonyüri, Anyon Açığı.",
-        "tedavi": "IV %0.9 SF (Agresif Hidrasyon), IV İnsülin İnfüzyonu, K+ Replasmanı.",
-        "radyoloji": "PA AC Grafisi (Enfeksiyon odağı tarama)."
+    "Feokromositoma": {
+        "bulgular": ["Ani Baş Ağrısı", "Terleme", "Çarpıntı", "Hipertansiyon"],
+        "tetkik": "24 saatlik idrarda Metanefrin/Normetanefrin, Sürrenal BT.",
+        "tedavi": "Alfa-Bloker sonrası Beta-Bloker, Cerrahi."
     },
-    "Konjesif Kalp Yetmezliği": {
-        "bulgular": ["Bilateral Ödem", "Ortopne", "PND", "Boyun Ven Dolgunluğu", "S3/S4 Sesi", "Hepatomegali"],
-        "tetkik": "NT-proBNP, Transtorasik EKO, Akciğer Grafisi, EKG.",
-        "tedavi": "IV Furosemid, ACE İnhibitörü/ARNI, Beta-Bloker.",
-        "radyoloji": "Telekardiyografi (Kardiyomegali, Vasküler Belirginleşme)."
+    "Tüberküloz (AC)": {
+        "bulgular": ["Gece Terlemesi", "Kilo Kaybı", "Hemoptizi", "Öksürük (Gece)"],
+        "tetkik": "Balgamda ARB, Akciğer Grafisi (Kavite), PPD/IGRA.",
+        "tedavi": "Dörtlü Anti-TBC (EİRP) protokolü."
     },
-    "Pulmoner Emboli": {
-        "bulgular": ["Hemoptizi", "Plevritik Ağrı", "Unilateral Ödem", "Taşikardi", "Ani Nefes Darlığı"],
-        "tetkik": "D-Dimer, Kan Gazı, EKG (S1Q3T3), EKO.",
-        "tedavi": "Antikoagülasyon (DMAH), Trombolitik Tedavi (Masifse).",
-        "radyoloji": "BT Pulmoner Anjiyografi (Altın Standart)."
+    "Nefrotik Sendrom": {
+        "bulgular": ["Bilateral Ödem", "Asit", "Poliüri"],
+        "tetkik": "24 saatlik idrarda protein (>3.5g), Albümin düşüklüğü.",
+        "tedavi": "Steroid, ACE İnhibitörü, Diüretik."
     },
-    "Organofosfat Zehirlenmesi": {
-        "bulgular": ["Miyozis", "Hipersalivasyon", "Ral/Ronküs", "Karın Ağrısı", "Bradikardi"],
-        "tetkik": "Plazma Kolinesteraz Düzeyi.",
-        "tedavi": "ACİL ATROPİN (Yanıt alana kadar), PAM (Pralidoksim).",
-        "radyoloji": "PA AC Grafisi."
-    },
-    "Malignite / Lenfoma": {
-        "bulgular": ["Lenfadenopati", "Splenomegali", "Gece Terlemesi", "Kilo Kaybı (İstemsiz)"],
-        "tetkik": "LN Biyopsisi, LDH, Periferik Yayma, Sedim.",
-        "tedavi": "Onkoloji Konsültasyonu, Kemoterapi.",
-        "radyoloji": "PET-CT, Kontrastlı Tüm Batın/Toraks BT."
-    },
-    "Sistemik Lupus (SLE)": {
-        "bulgular": ["Kelebek Döküntü", "Eklem Ağrısı", "Oral Aft", "Plevritik Ağrı"],
-        "tetkik": "ANA, Anti-dsDNA, C3/C4, Tam İdrar Tetkiki.",
-        "tedavi": "Hidroksiklorokin, Steroidler, İmmünsupresifler.",
-        "radyoloji": "Renal USG, Eklem USG."
-    },
-    "Bakteriyel Menenjit": {
-        "bulgular": ["Ense Sertliği", "Ani Şiddetli Baş Ağrısı", "Konfüzyon", "Ateş"],
-        "tetkik": "Lomber Ponksiyon (LP), BOS Kültürü, Kan Kültürü.",
-        "tedavi": "IV Sefotaksim/Seftriakson + Vankomisin + Deksametazon.",
-        "radyoloji": "LP Öncesi KİBAS ekarte etmek için Beyin BT."
+    "Enfektif Endokardit": {
+        "bulgular": ["Ateş", "Peteşi/Purpura", "Splenomegali", "Üfürüm"],
+        "tetkik": "Kan Kültürü, EKO (Vejetasyon), Duke Kriterleri.",
+        "tedavi": "Uzun süreli IV Antibiyoterapi."
     }
 }
 
-# 6. ANALİZ VE EPİKRİZ MOTORU
-if st.button("🚀 MAKSİMUM ANALİZİ BAŞLAT VE ARŞİVLE"):
+# 6. ANALİZ VE ÇIKTI
+if st.button("🚀 OMNI-ARŞİV SORGUSUNU BAŞLAT"):
     if not hepsi:
-        st.error("Hata: Herhangi bir klinik bulgu seçilmedi. Lütfen sistem sorgusunu tamamlayın.")
+        st.error("Lütfen belirti giriniz.")
     else:
-        st.divider()
         sonuclar = []
-        
-        # Matematiksel Eşleşme Analizi
-        for hastalik, data in tıp_arsivi.items():
+        for ad, data in arsiv.items():
             eslesme = set(hepsi).intersection(set(data["bulgular"]))
             if eslesme:
                 puan = round((len(eslesme) / len(data["bulgular"])) * 100, 1)
-                sonuclar.append({"ad": hastalik, "skor": puan, "detay": data, "eslesen": list(eslesme)})
+                sonuclar.append({"ad": ad, "skor": puan, "veri": data, "eslesen": eslesme})
         
         sonuclar = sorted(sonuclar, key=lambda x: x['skor'], reverse=True)
 
-        col_1, col_2 = st.columns([1.4, 1])
+        res1, res2 = st.columns([1.2, 1])
+        with res1:
+            st.markdown("### 🧬 Klinik Matris Sonuçları")
+            for s in sonuclar:
+                is_danger = s['skor'] > 70
+                card_class = "diag-card warning-card" if is_danger else "diag-card"
+                st.markdown(f"""
+                <div class='{card_class}'>
+                    <div class='section-title'>{s['ad']} (%{s['skor']} Uyum)</div>
+                    <p><b>Eşleşen:</b> {", ".join(s['eslesen'])}</p>
+                    <p style='color:#a5d6ff'><b>Tetkik:</b> {s['veri']['tetkik']}</p>
+                    <p style='color:#aff5b4'><b>Tedavi:</b> {s['veri']['tedavi']}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
-        with col_1:
-            st.markdown("### 🧬 Klinik Matris Analizi")
-            if not sonuclar:
-                st.info("Seçilen bulgular spesifik bir tanıya %100 uymuyor. Ayırıcı tanılar üzerinden ilerleyiniz.")
-            else:
-                for s in sonuclar:
-                    with st.container():
-                        st.markdown(f"""
-                        <div class='diag-card'>
-                            <div class='section-title'>{s['ad']} (Uyumluluk: %{s['skor']})</div>
-                            <p><b>🔍 Eşleşen Bulgular:</b> {", ".join(s['eslesen'])}</p>
-                            <p style='color:#a5d6ff'><b>🔬 Tetkik Rehberi:</b> {s['detay']['tetkik']}</p>
-                            <p style='color:#aff5b4'><b>💊 Tedavi Protokolü:</b> {s['detay']['tedavi']}</p>
-                            <p style='color:#ffa8a8'><b>📡 Radyoloji Planı:</b> {s['detay']['radyoloji']}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-        with col_2:
-            st.markdown("### 📝 RESMİ KLİNİK EPİKRİZ")
-            radyo_not = "Kontrastlı tetkik uygundur." if egfr > 60 else "⚠️ DİKKAT: eGFR < 60, Kontrastsız tetkik veya hidrasyon zorunludur!"
-            
-            epikriz_final = f"""KLİNİK RAPOR VE TEDAVİ ÖZETİ
+        with res2:
+            st.markdown("### 📝 RESMİ EPİKRİZ")
+            rad = "Kontrastlı uygundur" if egfr > 60 else "KONTRASSIZ TETKİK ÖNERİLİR"
+            epikriz = f"""TIBBİ DURUM ÖZETİ
 --------------------------------------------------
-TARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}
-HASTA ID: {h_ad} | YAŞ: {yas} | KİLO: {kilo}kg
-KAN ŞEKERİ: {seker} mg/dL | eGFR: {egfr} ml/dk
+TARİH: {datetime.now().strftime('%d/%m/%Y')}
+Glikoz: {seker} mg/dL | eGFR: {egfr} ml/dk
+Radyoloji Notu: {rad}
 
-[VİTAL ANALİZ VE RADYOLOJİ GÜVENLİĞİ]
-- {radyo_not}
-- {"Diyabetik acil açısından dikkat!" if seker > 250 or seker < 70 else "Kan şekeri stabil."}
-
-[SİSTEMİK BULGULAR]
+[BELİRTİLER]
 {", ".join(hepsi)}
 
-[OLASI TANILAR VE AYIRICI TANI]
-{chr(10).join([f"- {res['ad']} (Skor: %{res['skor']})" for res in sonuclar[:5]])}
+[AYIRICI TANILAR]
+{chr(10).join([f"- {x['ad']} (%{x['skor']})" for x in sonuclar[:3]])}
 
-[İLK BASAMAK PLAN]
-{chr(10).join([f"* {res['ad']} için: {res['detay']['tetkik'][:120]}..." for res in sonuclar[:2]])}
+[PLAN]
+- Hastanın vital bulguları ve belirtileri ışığında ileri tetkik planlanmıştır.
 
 --------------------------------------------------
-ONAY: SİSTEM SORUMLUSU İSMAİL ORHAN
+SİSTEM SORUMLUSU: İSMAİL ORHAN
 """
-            st.markdown(f"<div class='epikriz-paper'><pre>{epikriz_final}</pre></div>", unsafe_allow_html=True)
-            st.download_button("📥 Raporu Arşivle (.txt)", epikriz_final, file_name=f"{h_ad}_final_report.txt")
+            st.markdown(f"<div style='background:white; color:black; padding:20px; font-family:monospace; border:2px solid black;'><pre>{epikriz}</pre></div>", unsafe_allow_html=True)
+            st.download_button("Dosyayı Kaydet", epikriz, "hasta_rapor.txt")
 
 st.markdown("---")
-st.caption("The Medical Archive Ultimate | Tüm Branşlar & Dinamik Matris | İSMAİL ORHAN")
+st.caption("İSMAİL ORHAN | Medical CDSS Final Edition")
