@@ -1,115 +1,129 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- SAYFA AYARLARI ---
-st.set_page_config(page_title="Hekim Yardımcı Paneli", page_icon="⚕️", layout="wide")
+# --- PROFESYONEL SAYFA AYARLARI ---
+st.set_page_config(page_title="Med-AI Karar Destek", page_icon="⚕️", layout="wide")
 
-# Kurumsal ve Temiz Tasarım
+# Kurumsal ve Temiz Arayüz (Galatasaray Renklerine Küçük Göndermeli Ama Sade)
 st.markdown("""
     <style>
-    .main { background-color: #fcfcfc; }
-    .stButton>button { width: 100%; background-color: #1a73e8; color: white; border-radius: 5px; height: 3em; font-weight: bold; }
-    .diagnosis-box { padding: 20px; border-radius: 10px; background-color: #ffffff; border: 1px solid #e0e0e0; margin-bottom: 15px; }
-    .ai-box { padding: 25px; border-radius: 10px; background-color: #f0f4ff; border-left: 5px solid #1a73e8; }
-    .critical { color: #d93025; font-weight: bold; }
+    .main { background-color: #f8f9fa; }
+    .stButton>button { width: 100%; background-color: #d32f2f; color: white; border-radius: 8px; font-weight: bold; }
+    .diagnosis-card { padding: 20px; border-radius: 12px; background-color: white; border-left: 6px solid #ffca28; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; }
+    .ai-card { padding: 25px; border-radius: 12px; background-color: #fff9e6; border: 1px solid #ffe082; color: #333; }
+    .critical-alert { background-color: #ffebee; color: #c62828; padding: 15px; border-radius: 8px; border: 1px solid #ffcdd2; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- AI CONFIG (404 HATASI ÇÖZÜMÜ) ---
+# --- AI MODÜLÜ YAPILANDIRMASI ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # Model ismini en stabil haliyle tanımlıyoruz
+    # Hata almamak için model ismini en yalın haliyle kullanıyoruz
     model = genai.GenerativeModel('gemini-1.5-flash')
-    AI_AVAILABLE = True
+    AI_STATUS = True
 except Exception as e:
-    AI_AVAILABLE = False
+    AI_STATUS = False
+    AI_ERR = str(e)
 
-st.title("⚕️ Klinik Karar Destek ve Teşhis Paneli")
-st.write("Dahiliye Servisi Hekim Yardımcı Yazılımı | **Geliştiren: İsmail Orhan**")
+# --- ÜST PANEL ---
+st.title("🏥 Klinik Karar Destek Paneli")
+st.write("Dahiliye Servisi Hekim Yardımcı Yazılımı | **Geliştirici: İsmail Orhan**")
 st.divider()
 
-# --- SOL PANEL: VİTALLER ---
-with st.sidebar:
-    st.header("📋 Hasta Verileri")
-    yas = st.number_input("Yaş", 0, 120, 45)
-    cinsiyet = st.selectbox("Cinsiyet", ["Erkek", "Kadın"])
-    st.subheader("🩸 Vital Bulgular")
-    ates = st.number_input("Ateş (°C)", 35.0, 42.0, 36.6)
-    spo2 = st.slider("SpO2 (%)", 70, 100, 98)
-    nabiz = st.number_input("Nabız", 30, 200, 80)
-    tansiyon = st.text_input("Tansiyon (Örn: 120/80)", "120/80")
+# --- PANEL YAPISI ---
+col_sidebar, col_content = st.columns([1, 3], gap="large")
 
-# --- ANA PANEL: SEMPTOMLAR ---
-st.subheader("🔍 Klinik Semptom Seçimi")
-col1, col2 = st.columns(2)
+with col_sidebar:
+    st.header("📋 Hasta Bilgileri")
+    with st.container(border=True):
+        yas = st.number_input("Yaş", 0, 120, 45)
+        cinsiyet = st.selectbox("Cinsiyet", ["Erkek", "Kadın"])
+        ates = st.number_input("Ateş (°C)", 35.0, 42.0, 36.6, step=0.1)
+        spo2 = st.slider("SpO2 (%)", 70, 100, 98)
+        nabiz = st.number_input("Nabız (atım/dk)", 30, 220, 80)
+        ta = st.text_input("Tansiyon (TA)", "120/80")
 
-with col1:
-    genel = st.multiselect("Genel / Enfeksiyon", ["Yüksek Ateş", "Halsizlik", "Gece Terlemesi", "Lenfadenopati", "Kilo Kaybı"])
-    kardiyo = st.multiselect("Kardiyovasküler", ["Göğüs Ağrısı", "Çarpıntı", "Nefes Darlığı", "Ödem"])
-    noro = st.multiselect("Nörolojik", ["Baş Ağrısı", "Bilinç Bulanıklığı", "Baş Dönmesi", "Güç Kaybı"])
+with col_content:
+    st.subheader("🔍 Klinik Bulgular ve Semptomlar")
+    
+    t1, t2, t3, t4 = st.tabs(["Genel & Enfeksiyon", "Kardiyo & Solunum", "Gastro & Üro", "Nöro & Diğer"])
+    
+    with t1:
+        c1, c2 = st.columns(2)
+        sym_genel = c1.multiselect("Sistemik", ["Halsizlik", "Kilo Kaybı", "Gece Terlemesi", "Yaygın Ağrı"])
+        sym_enf = c2.multiselect("Enfeksiyon", ["Yüksek Ateş", "Üşüme-Titreme", "Lenfadenopati", "Döküntü"])
+        
+    with t2:
+        c3, c4 = st.columns(2)
+        sym_kardiyo = c3.multiselect("Kardiyovasküler", ["Göğüs Ağrısı", "Çarpıntı", "Ödem", "Ortopne"])
+        sym_solunum = c4.multiselect("Solunum", ["Nefes Darlığı", "Öksürük", "Hemoptizi", "Hışıltı"])
 
-with col2:
-    gastro = st.multiselect("Gastrointestinal", ["Karın Ağrısı", "Bulantı/Kusma", "Melena", "Hematemez", "Sarılık"])
-    uriner = st.multiselect("Üriner / Diğer", ["Dizüri", "Hematüri", "Yan Ağrısı", "Eklem Ağrısı", "Döküntü"])
+    with t3:
+        c5, c6 = st.columns(2)
+        sym_gastro = c5.multiselect("Gastrointestinal", ["Karın Ağrısı", "Bulantı/Kusma", "Melena", "Sarılık"])
+        sym_uriner = c6.multiselect("Üriner", ["Dizüri", "Hematüri", "Yan Ağrısı", "Sık İdrar"])
 
-secilenler = genel + kardiyo + noro + gastro + uriner
+    with t4:
+        sym_noro = st.multiselect("Nöroloji/Diğer", ["Baş Ağrısı", "Bilinç Bulanıklığı", "Vertigo", "Eklem Ağrısı"])
 
-# --- ANALİZ MOTORU ---
-if st.button("KLİNİK ANALİZİ BAŞLAT"):
-    if not secilenler:
-        st.warning("Lütfen en az bir semptom seçin.")
-    else:
-        with st.spinner("Veriler analiz ediliyor..."):
-            # 1. BÖLÜM: STATİK TANI VE ÖNERİLER (Sistemin kendi mantığı)
-            st.markdown("### 📑 Klinik Ön Değerlendirme")
-            
-            with st.container():
-                st.markdown("<div class='diagnosis-box'>", unsafe_allow_html=True)
-                
-                # Örnek Statik Mantık (Senin eklediğin detaylar)
-                if "Göğüs Ağrısı" in secilenler and "Nefes Darlığı" in kardiyo:
-                    st.write("👉 **Ön Tanı Adayı:** Akut Koroner Sendrom / Pulmoner Emboli")
-                    st.write("🧪 **Gerekli Tetkikler:** EKG, Troponin, D-Dimer, PA Akciğer Grafisi.")
-                
-                if "Karın Ağrısı" in gastro and "Bulantı/Kusma" in gastro:
-                    st.write("👉 **Ön Tanı Adayı:** Akut Batın / Gastroenterit / Pankreatit")
-                    st.write("🧪 **Gerekli Tetkikler:** Hemogram, Amilaz-Lipaz, Ayakta Direkt Karın Grafisi.")
-                
-                if ates > 38 and "Halsizlik" in genel:
-                    st.write("👉 **Ön Tanı Adayı:** Enfeksiyon Hastalıkları / Sepsis")
-                    st.write("🧪 **Gerekli Tetkikler:** Tam Kan, CRP, Prokalsitonin, Kültür Testleri.")
-                
-                if spo2 < 93:
-                    st.markdown("<p class='critical'>⚠️ KRİTİK: Düşük Oksijen Satürasyonu! Solunum desteği ve arteriyel kan gazı (AKG) değerlendirilmelidir.</p>", unsafe_allow_html=True)
-                
-                st.markdown("</div>", unsafe_allow_html=True)
+    all_symptoms = sym_genel + sym_enf + sym_kardiyo + sym_solunum + sym_gastro + sym_uriner + sym_noro
 
-            # 2. BÖLÜM: YAPAY ZEKA GÖRÜŞÜ (Gemini)
-            st.divider()
-            st.markdown("### 🤖 Yapay Zeka (Gemini) Uzman Görüşü")
-            
-            if AI_AVAILABLE:
-                prompt = f"""
-                Sen uzman bir klinisyen yardımcısısın.
-                HASTA: {yas} yaş, {cinsiyet}.
-                VİTALLER: Ateş {ates}, SpO2 %{spo2}, Nabız {nabiz}, TA {tansiyon}.
-                BELİRTİLER: {', '.join(secilenler)}.
+    if st.button("📊 KLİNİK ANALİZİ BAŞLAT"):
+        if not all_symptoms:
+            st.error("Lütfen analiz için en az bir bulgu seçiniz.")
+        else:
+            with st.spinner("Analiz ediliyor..."):
+                # 1. ÖN DEĞERLENDİRME (STATİK MANTIK)
+                st.markdown("### 📑 Klinik Ön Değerlendirme ve Tetkikler")
                 
-                Lütfen bu veriler ışığında:
-                1. En olası 3 AYIRICI TANIYI detaylı açıkla.
-                2. İstenecek SPESİFİK TETKİKLERİ (Kan, Görüntüleme) listele.
-                3. ACİL MÜDAHALE gerektiren bir durum var mı belirt.
+                with st.container():
+                    # KRİTİK UYARI
+                    if spo2 < 92:
+                        st.markdown("<div class='critical-alert'>🚨 ACİL: Hipoksi Saptandı! Oksijen desteği ve AKG düşünülmelidir.</div>", unsafe_allow_html=True)
+                    
+                    st.markdown("<div class='diagnosis-card'>", unsafe_allow_html=True)
+                    
+                    if "Göğüs Ağrısı" in sym_kardiyo:
+                        st.write("🚩 **Ön Tanı:** Akut Koroner Sendrom?")
+                        st.write("🧪 **Tetkikler:** Seri EKG, Troponin, CK-MB, EKO.")
+                        
+                    if "Karın Ağrısı" in sym_gastro and "Bulantı/Kusma" in sym_gastro:
+                        st.write("🚩 **Ön Tanı:** Akut Batın / Pankreatit?")
+                        st.write("🧪 **Tetkikler:** Hemogram, Amilaz, Lipaz, Ayakta Direkt Batın Grafisi (ADBG).")
+                        
+                    if ates > 38 and "Halsizlik" in sym_genel:
+                        st.write("🚩 **Ön Tanı:** Enfeksiyon / Sepsis?")
+                        st.write("🧪 **Tetkikler:** CRP, Prokalsitonin, Kan/İdrar Kültürü, Akciğer Grafisi.")
+
+                    if not any(x in all_symptoms for x in ["Göğüs Ağrısı", "Karın Ağrısı"]):
+                        st.write("✅ Mevcut bulgular üzerinden spesifik ön tanıları aşağıda AI detaylandıracaktır.")
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+                # 2. YAPAY ZEKA GÖRÜŞÜ
+                st.divider()
+                st.subheader("🤖 Yapay Zeka (Gemini) Detaylı Analizi")
                 
-                Tıp terminolojisi kullan ve profesyonel bir rapor sun.
-                """
-                try:
-                    response = model.generate_content(prompt)
-                    st.markdown(f"<div class='ai-box'>{response.text}</div>", unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"Yapay zeka yanıt veremedi. Hata: {str(e)}")
-            else:
-                st.info("Yapay zeka yapılandırması eksik.")
+                if AI_STATUS:
+                    # Syntax hatasını önlemek için promptu temizledik
+                    prompt_text = (
+                        f"Sen deneyimli bir tıp doktoru asistanısın. "
+                        f"Hasta: {yas} yaşında {cinsiyet}. "
+                        f"Vitaller: Ateş {ates}, Nabız {nabiz}, SpO2 %{spo2}, TA {ta}. "
+                        f"Semptomlar: {', '.join(all_symptoms)}. "
+                        f"Lütfen şunları açıkla: 1. En olası 3 ayırıcı tanı ve nedenleri. "
+                        f"2. İstenmesi gereken spesifik laboratuvar ve görüntüleme tetkikleri. "
+                        f"3. Takipte dikkat edilmesi gereken kırmızı bayraklar."
+                    )
+                    
+                    try:
+                        response = model.generate_content(prompt_text)
+                        st.markdown(f"<div class='ai-card'>{response.text}</div>", unsafe_allow_html=True)
+                    except Exception as ai_e:
+                        st.error(f"AI Analiz Hatası: {str(ai_e)}")
+                else:
+                    st.error(f"Yapay Zeka bağlantısı kurulamadı: {AI_ERR}")
 
 st.divider()
-st.caption(f"© 2026 Med-AI Karar Destek | Geliştirici: İsmail Orhan")
+st.caption("© 2026 Med-AI Karar Destek Sistemi | İsmail Orhan")
