@@ -14,8 +14,8 @@ try:
 except:
     st.error("Secrets'da 'GEMINI_API_KEY' bulunamadı!")
 
-# === YENİ: SESLE LAB VERİLERİ İÇİN SESSION STATE (ekleme) ===
-if 'ses_protokol' not in st.session_state: st.session_state.ses_protokol = "İSMAİL-V30-FINAL"
+# === YENİ: SESLE GİRİŞ İÇİN SESSION STATE (ekleme) ===
+if 'ses_protokol' not in st.session_state: st.session_state.ses_protokol = "İSMAİL ORHAN"
 if 'ses_cinsiyet' not in st.session_state: st.session_state.ses_cinsiyet = "Erkek"
 if 'ses_yas' not in st.session_state: st.session_state.ses_yas = 45
 if 'ses_kilo' not in st.session_state: st.session_state.ses_kilo = 85
@@ -24,6 +24,7 @@ if 'ses_wbc' not in st.session_state: st.session_state.ses_wbc = 8500
 if 'ses_plt' not in st.session_state: st.session_state.ses_plt = 245000
 if 'ses_kre' not in st.session_state: st.session_state.ses_kre = 1.1
 if 'ses_glu' not in st.session_state: st.session_state.ses_glu = 105
+if 'voice_symptoms' not in st.session_state: st.session_state.voice_symptoms = []
 
 # === RATE LIMIT VE BOŞ EKRAN KORUMASI ===
 if 'ai_klinik_yorum' not in st.session_state:
@@ -63,7 +64,7 @@ st.markdown("<div class='main-header'><h1>DAHİLİYE KLİNİK KARAR ROBOTU</h1><
 # 2. LABORATUVAR TERMİNALİ (V30 + YENİ SKORLAMALAR)
 with st.sidebar:
     st.markdown("### 🏛️ LABORATUVAR VERİ MERKEZİ")
-    p_no = st.text_input("Protokol No", value=st.session_state.ses_protokol)
+    p_no = st.text_input("Ad Soyad", value=st.session_state.ses_protokol)   # ← Değiştirildi
     cinsiyet = st.radio("Cinsiyet", ["Erkek", "Kadın"], index=0 if st.session_state.ses_cinsiyet == "Erkek" else 1)
     yas = st.number_input("Yaş", 0, 120, value=st.session_state.ses_yas)
     kilo = st.number_input("Kilo (kg)", 5, 250, value=st.session_state.ses_kilo)
@@ -101,13 +102,12 @@ with st.sidebar:
     else: egfr = 0
     st.metric("eGFR Skoru", f"{egfr} ml/dk")
 
-# === SES İLE BİLGİ GİRİŞİ (Lab sonuçları da dolacak) ===
-st.subheader("🎤 Ses ile Semptom + Lab Girişi")
-st.caption("Mikrofon izni verin ve söyleyin: “Yaş 80, cinsiyet erkek, protokol İSMAİL-V30-FINAL, kilo 85, hb 12, wbc 12000, plt 200000, kreatinin 1.5, akş 180, göğüs ağrım var...”")
+# === SES İLE BİLGİ GİRİŞİ (Ad Soyad + tüm lab değerleri) ===
+st.subheader("🎤 Ses ile Semptom + Lab + Ad Soyad Girişi")
+st.caption("Mikrofon izni verin ve söyleyin: “Ad Soyad İsmail Orhan, yaş 80, cinsiyet erkek, hb 12, wbc 15000, kreatinin 1.8, göğüs ağrım var...”")
 
 audio_value = st.audio_input("Ses kaydı yapın")
 
-# Tüm olası semptomlar (tam liste, hiçbir şey kısaltılmadı)
 all_possible_symptoms = [
     "Göğüs Ağrısı", "Sırt Ağrısı (Yırtılır)", "Kola Yayılan Ağrı", "Çarpıntı", "Hipotansiyon", "Senkop", "Bilateral Ödem", "Boyun Ven Dolgunluğu", "S3/S4 Sesi", "Bradikardi", "Taşikardi", "Üfürüm",
     "Nefes Darlığı", "Hemoptizi", "Kuru Öksürük", "Balgamlı Öksürük", "Ral", "Ronküs", "Wheezing", "Stridor", "Plevritik Ağrı", "Siyanoz", "Ortopne", "Hipoksi",
@@ -121,11 +121,12 @@ all_possible_symptoms = [
 if audio_value is not None:
     if st.button("🔍 Sesi Analiz Et ve Tüm Verileri Doldur"):
         try:
-            with st.spinner("Ses dinleniyor... (semptom + tüm lab değerleri ayıklanıyor)"):
+            with st.spinner("Ses dinleniyor..."):
                 model = genai.GenerativeModel('gemini-2.5-flash-lite')
                 prompt = f"""
                 Ses kaydını dinle ve SADECE şu formatta cevap ver (hiçbir açıklama yazma):
 
+                ADSOYAD: ...
                 SEMPTOMLAR: semptom1, semptom2, ...
                 PROTOKOL: ...
                 CİNSİYET: Erkek veya Kadın
@@ -146,7 +147,8 @@ if audio_value is not None:
                 new_symptoms = []
                 for line in lines:
                     line = line.strip()
-                    if line.startswith("SEMPTOMLAR:"):
+                    if line.startswith("ADSOYAD:"): st.session_state.ses_protokol = line.replace("ADSOYAD:", "").strip()
+                    elif line.startswith("SEMPTOMLAR:"):
                         new_symptoms = [s.strip() for s in line.replace("SEMPTOMLAR:", "").split(",") if s.strip() in all_possible_symptoms]
                     elif line.startswith("PROTOKOL:"): st.session_state.ses_protokol = line.replace("PROTOKOL:", "").strip()
                     elif line.startswith("CİNSİYET:"): st.session_state.ses_cinsiyet = line.replace("CİNSİYET:", "").strip()
@@ -173,19 +175,12 @@ if audio_value is not None:
                         except: pass
 
                 if new_symptoms:
+                    st.session_state.voice_symptoms.extend(new_symptoms)
                     st.success(f"✅ {len(new_symptoms)} semptom eklendi")
-                    st.session_state.new_symptoms = new_symptoms
-                st.success("✅ Tüm lab değerleri (Hb, WBC, PLT, Kreatinin, AKŞ vb.) otomatik dolduruldu!")
+                st.success("✅ Ad Soyad + tüm lab değerleri dolduruldu!")
                 st.rerun()
         except Exception as e:
             st.error(f"Ses analizi hatası: {e}")
-
-# Sesle gelen semptomları listeye ekle
-if 'new_symptoms' in st.session_state and st.session_state.new_symptoms:
-    if st.button("Sesle gelen semptomları listeye ekle"):
-        b.extend(st.session_state.new_symptoms)
-        st.success("Sesle gelen semptomlar eklendi!")
-        del st.session_state.new_symptoms
 
 # 3. KLİNİK BULGU SEÇİMİ (tamamen orijinal)
 st.subheader("🔍 Klinik Semptom ve Fizik Muayene Bulguları")
@@ -199,6 +194,9 @@ with t4: b.extend(st.multiselect("ENDO", ["Poliüri", "Polidipsi", "Aseton Kokus
 with t5: b.extend(st.multiselect("NÖRO", ["Konfüzyon", "Ense Sertliği", "Nöbet", "Dizartri", "Ataksi", "Ani Baş Ağrısı", "Fotofobi", "Parezi", "Pupil Eşitsizliği", "Dengesizlik", "Pitozis"]))
 with t6: b.extend(st.multiselect("HEM", ["Peteşi", "Purpura", "Ekimoz", "Lenfadenopati", "Kilo Kaybı", "Gece Terlemesi", "Kaşıntı", "Solukluk", "Kemik Ağrısı", "Diş Eti Kanaması", "B Semptomları"]))
 with t7: b.extend(st.multiselect("ROM", ["Ateş (>38)", "Eklem Ağrısı", "Sabah Sertliği", "Kelebek Döküntü", "Raynaud", "Ağızda Aft", "Göz Kuruluğu", "Deri Sertleşmesi", "Uveit", "Paterji Reaksiyonu", "Bel Ağrısı (İnflamatuar)"]))
+
+# YENİ: Sesle gelen semptomları buraya ekle (NameError düzeltmesi)
+b.extend(st.session_state.voice_symptoms)
 
 # Otomatik Lab Değerlendirme (orijinal)
 if kre > 1.3: b.append("Böbrek Hasarı")
@@ -218,7 +216,7 @@ up_file = st.file_uploader("EKG, Röntgen veya Laboratuvar Sonucu Yükle", type=
 # 4. MASTER 85+ HASTALIK VERİTABANI (tamamen orijinal)
 master_db = { ... }  # Senin orijinal 85+ hastalık veritabanın burada aynen duruyor
 
-# 5. FINAL ANALİZ MOTORU + AI GÜCÜ (orijinal + seslendirmeler)
+# 5. FINAL ANALİZ MOTORU + AI GÜCÜ
 if st.button("🚀 ANALİZİ BAŞLAT"):
     if not b:
         st.error("Klinik veri girişi yapılmadı!")
@@ -276,7 +274,7 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                     with st.spinner("Gemini analiz ediliyor..."):
                         model = genai.GenerativeModel('gemini-2.5-flash-lite')
                         vaka_data = f"""
-                        Hasta: {yas}y {cinsiyet}. GCS: {gcs_skor}, Wells: {wells_score}.
+                        Hasta: {yas}y {cinsiyet}. Ad Soyad: {p_no}. GCS: {gcs_skor}, Wells: {wells_score}.
                         Lab: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}, eGFR {egfr}, AKŞ {glu}.
                         Semptomlar: {b}. 
                         Lütfen bu verileri uzman bir dahiliyeci gözüyle analiz et.
@@ -305,7 +303,7 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                     st.audio(fp, format="audio/mp3")
 
             st.divider()
-            epi = f"""DAHİLİYE KLİNİK KARAR ROBOTU\n---------------------------\nPROTOKOL: {p_no}\nHASTA CİNSİYETİ: {cinsiyet}\nTARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}\nLAB: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}\nGCS: {gcs_skor}, Wells: {wells_score}\neGFR: {egfr} ml/dk\n\nBELİRTİLER:\n{", ".join(b)}\n\nÖN TANI LİSTESİ:\n{chr(10).join([f"- {x['ad']} (%{x['puan']})" for x in results[:15]])}\n\nGELİŞTİRİCİ: İSMAİL ORHAN\n---------------------------"""
+            epi = f"""DAHİLİYE KLİNİK KARAR ROBOTU\n---------------------------\nAD SOYAD: {p_no}\nHASTA CİNSİYETİ: {cinsiyet}\nTARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}\nLAB: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}\nGCS: {gcs_skor}, Wells: {wells_score}\neGFR: {egfr} ml/dk\n\nBELİRTİLER:\n{", ".join(b)}\n\nÖN TANI LİSTESİ:\n{chr(10).join([f"- {x['ad']} (%{x['puan']})" for x in results[:15]])}\n\nGELİŞTİRİCİ: İSMAİL ORHAN\n---------------------------"""
             st.markdown(f"<pre style='background:white; padding:40px; border-radius:45px; border:10px solid #DC2626; color:#000; font-size:14px; white-space: pre-wrap;'>{epi}</pre>", unsafe_allow_html=True)
             st.download_button("📥 Epikrizi İndir", epi, file_name=f"{p_no}_V30.txt")
 
