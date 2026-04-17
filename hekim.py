@@ -47,7 +47,7 @@ st.markdown("""
 
 st.markdown("<div class='main-header'><h1>DAHİLİYE KLİNİK KARAR ROBOTU</h1><p>GELİŞTİRİCİ: İSMAİL ORHAN </p></div>", unsafe_allow_html=True)
 
-# Sidebar
+# 2. LABORATUVAR TERMİNALİ
 with st.sidebar:
     st.markdown("### 🏛️ LABORATUVAR VERİ MERKEZİ")
     p_no = st.text_input("Ad Soyad", value=st.session_state.ses_protokol)
@@ -158,20 +158,20 @@ if audio_value is not None:
 
                 if new_symptoms:
                     st.session_state.voice_symptoms = new_symptoms
-                    st.success(f"✅ {len(new_symptoms)} semptom algılandı.")
+                    st.success(f"✅ {len(new_symptoms)} semptom algılandı. Aşağıdaki butona basarak ekleyebilirsiniz.")
                 st.success("✅ Ad Soyad ve lab değerleri dolduruldu!")
                 st.rerun()
         except Exception as e:
             st.error(f"Ses analizi hatası: {e}")
 
-# Sesle gelen semptomları butonla ekle (NameError önlendi)
+# Sesle gelen semptomları butonla ekle (NameError düzeltildi)
 if st.session_state.voice_symptoms:
     if st.button("Sesle gelen semptomları listeye ekle"):
         b.extend(st.session_state.voice_symptoms)
         st.success("Sesle gelen semptomlar semptom listesine eklendi!")
         st.session_state.voice_symptoms = []
 
-# Klinik Bulgular
+# 3. KLİNİK BULGU SEÇİMİ
 st.subheader("🔍 Klinik Semptom ve Fizik Muayene Bulguları")
 t1, t2, t3, t4, t5, t6, t7 = st.tabs(["🫀 KARDİYO", "🫁 PULMONER", "🤢 GİS-KC", "🧪 ENDOKRİN", "🧠 NÖROLOJİ", "🩸 HEMATO-ONKO", "🧬 ROMATO-ENF"])
 
@@ -184,7 +184,7 @@ with t5: b.extend(st.multiselect("NÖRO", ["Konfüzyon", "Ense Sertliği", "Nöb
 with t6: b.extend(st.multiselect("HEM", ["Peteşi", "Purpura", "Ekimoz", "Lenfadenopati", "Kilo Kaybı", "Gece Terlemesi", "Kaşıntı", "Solukluk", "Kemik Ağrısı", "Diş Eti Kanaması", "B Semptomları"]))
 with t7: b.extend(st.multiselect("ROM", ["Ateş (>38)", "Eklem Ağrısı", "Sabah Sertliği", "Kelebek Döküntü", "Raynaud", "Ağızda Aft", "Göz Kuruluğu", "Deri Sertleşmesi", "Uveit", "Paterji Reaksiyonu", "Bel Ağrısı (İnflamatuar)"]))
 
-# Sesle gelen semptomları buraya ekle (NameError düzeltmesi)
+# Sesle gelen semptomları buraya ekle (NameError düzeltildi)
 b.extend(st.session_state.voice_symptoms)
 
 # Otomatik Lab Değerlendirme
@@ -291,7 +291,7 @@ master_db = {
     "Sarkoidoz": {"b": ["Nefes Darlığı", "Lenfadenopati", "Uveit", "Kuru Öksürük"], "t": "ACE + Akciğer Grafisi", "ted": "Oral Steroid."},
 }
 
-# ANALİZİ BAŞLAT
+# 5. ANALİZ MOTORU
 if st.button("🚀 ANALİZİ BAŞLAT"):
     if not b:
         st.error("Klinik veri girişi yapılmadı!")
@@ -321,20 +321,20 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                 </div>
                 """, unsafe_allow_html=True)
 
-            # EN YÜKSEK ÖN TANI OTOMATİK SESLENDİR
+            # EN YÜKSEK ÖN TANI OTOMATİK SESLENDİR (kota dostu)
             if results and not st.session_state.top_tani_seslendirildi:
                 top = results[0]
                 tts_text = f"En yüksek ön tanı {top['ad']} yüzde {top['puan']}"
                 try:
-                    with st.spinner("En yüksek ön tanı seslendiriliyor..."):
-                        tts = gTTS(text=tts_text, lang='tr')
-                        fp = io.BytesIO()
-                        tts.write_to_fp(fp)
-                        fp.seek(0)
-                        st.audio(fp, format="audio/mp3")
+                    tts = gTTS(text=tts_text, lang='tr')
+                    fp = io.BytesIO()
+                    tts.write_to_fp(fp)
+                    fp.seek(0)
+                    st.audio(fp, format="audio/mp3", autoplay=True)
+                    st.success(f"🔊 En yüksek ön tanı otomatik seslendiriliyor: {top['ad']} (%{top['puan']})")
                     st.session_state.top_tani_seslendirildi = True
                 except:
-                    pass
+                    st.warning("Seslendirme şu anda kullanılamıyor (kota dolu olabilir).")
 
         with c2:
             st.markdown("### 📝 EPİKRİZ VE AI ANALİZİ")
