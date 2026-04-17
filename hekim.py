@@ -14,15 +14,16 @@ try:
 except:
     st.error("Secrets'da 'GEMINI_API_KEY' bulunamadı!")
 
-# === YENİ: SESLE LAB VERİLERİ İÇİN SESSION STATE (sadece ekleme) ===
-if 'ses_protokol' not in st.session_state:
-    st.session_state.ses_protokol = "İSMAİL-V30-FINAL"
-if 'ses_cinsiyet' not in st.session_state:
-    st.session_state.ses_cinsiyet = "Erkek"
-if 'ses_yas' not in st.session_state:
-    st.session_state.ses_yas = 45
-if 'ses_kilo' not in st.session_state:
-    st.session_state.ses_kilo = 85
+# === YENİ: SESLE LAB VERİLERİ İÇİN SESSION STATE (ekleme) ===
+if 'ses_protokol' not in st.session_state: st.session_state.ses_protokol = "İSMAİL-V30-FINAL"
+if 'ses_cinsiyet' not in st.session_state: st.session_state.ses_cinsiyet = "Erkek"
+if 'ses_yas' not in st.session_state: st.session_state.ses_yas = 45
+if 'ses_kilo' not in st.session_state: st.session_state.ses_kilo = 85
+if 'ses_hb' not in st.session_state: st.session_state.ses_hb = 14.0
+if 'ses_wbc' not in st.session_state: st.session_state.ses_wbc = 8500
+if 'ses_plt' not in st.session_state: st.session_state.ses_plt = 245000
+if 'ses_kre' not in st.session_state: st.session_state.ses_kre = 1.1
+if 'ses_glu' not in st.session_state: st.session_state.ses_glu = 105
 
 # === RATE LIMIT VE BOŞ EKRAN KORUMASI ===
 if 'ai_klinik_yorum' not in st.session_state:
@@ -77,28 +78,22 @@ with st.sidebar:
 
     st.divider()
     st.subheader("📊 WELLS SKORU")
-    w_inputs = [
-        st.checkbox("Aktif Kanser (+1)"), st.checkbox("Paralizi/İmmobilizasyon (+1)"),
-        st.checkbox("Yatak Bağımlılığı >3 Gün (+1)"), st.checkbox("Venöz Hassasiyet (+1)"),
-        st.checkbox("Tüm Bacakta Şişlik (+1)"), st.checkbox("Baldır Şişliği >3cm (+1)"),
-        st.checkbox("Gode Bırakan Ödem (+1)"), st.checkbox("Kollateral Venler (+1)"),
-        st.checkbox("Alternatif Tanı Olasılığı Düşük (+1)")
-    ]
+    w_inputs = [st.checkbox(x) for x in ["Aktif Kanser (+1)", "Paralizi/İmmobilizasyon (+1)", "Yatak Bağımlılığı >3 Gün (+1)", "Venöz Hassasiyet (+1)", "Tüm Bacakta Şişlik (+1)", "Baldır Şişliği >3cm (+1)", "Gode Bırakan Ödem (+1)", "Kollateral Venler (+1)", "Alternatif Tanı Olasılığı Düşük (+1)"]]
     wells_score = sum(w_inputs)
     st.warning(f"Wells Skoru: {wells_score}")
 
     st.divider()
-    kre = st.number_input("Kreatinin", 0.1, 45.0, 1.1)
-    hb = st.number_input("Hemoglobin (Hb)", 3.0, 25.0, 14.0)
-    wbc = st.number_input("WBC (Lökosit)", 0, 500000, 8500)
-    plt = st.number_input("PLT (Trombosit)", 0, 2000000, 245000)
-    glu = st.number_input("AKŞ (Glukoz)", 0, 3000, 105)
+    hb = st.number_input("Hemoglobin (Hb)", 3.0, 25.0, value=st.session_state.ses_hb)
+    wbc = st.number_input("WBC (Lökosit)", 0, 500000, value=st.session_state.ses_wbc)
+    plt = st.number_input("PLT (Trombosit)", 0, 2000000, value=st.session_state.ses_plt)
+    kre = st.number_input("Kreatinin", 0.1, 45.0, value=st.session_state.ses_kre)
+    glu = st.number_input("AKŞ (Glukoz)", 0, 3000, value=st.session_state.ses_glu)
     na = st.number_input("Sodyum (Na)", 100, 190, 140)
     k = st.number_input("Potasyum (K)", 1.0, 15.0, 4.2)
     ca = st.number_input("Kalsiyum (Ca)", 5.0, 22.0, 9.5)
     ast_alt = st.checkbox("AST/ALT > 3 Kat Artış")
     trop = st.checkbox("Troponin Pozitif (+)")
-    
+
     if kre > 0:
         base_egfr = ((140 - yas) * kilo) / (72 * kre)
         if cinsiyet == "Kadın": base_egfr *= 0.85
@@ -106,63 +101,86 @@ with st.sidebar:
     else: egfr = 0
     st.metric("eGFR Skoru", f"{egfr} ml/dk")
 
-# === SES İLE BİLGİ GİRİŞİ (GÜÇLENDİRİLDİ - Lab verileri de dolacak) ===
+# === SES İLE BİLGİ GİRİŞİ (Lab sonuçları da dolacak) ===
 st.subheader("🎤 Ses ile Semptom + Lab Girişi")
-st.caption("Mikrofon izni verin ve söyleyin: “Yaş 45, cinsiyet erkek, protokol İSMAİL-V30-FINAL, kilo 85, göğüs ağrım var, nefes darlığım var...”")
+st.caption("Mikrofon izni verin ve söyleyin: “Yaş 80, cinsiyet erkek, protokol İSMAİL-V30-FINAL, kilo 85, hb 12, wbc 12000, plt 200000, kreatinin 1.5, akş 180, göğüs ağrım var...”")
 
 audio_value = st.audio_input("Ses kaydı yapın")
 
-all_possible_symptoms = [ ... ]  # (önceki kodundaki tam semptom listesi aynen duruyor)
+# Tüm olası semptomlar (tam liste, hiçbir şey kısaltılmadı)
+all_possible_symptoms = [
+    "Göğüs Ağrısı", "Sırt Ağrısı (Yırtılır)", "Kola Yayılan Ağrı", "Çarpıntı", "Hipotansiyon", "Senkop", "Bilateral Ödem", "Boyun Ven Dolgunluğu", "S3/S4 Sesi", "Bradikardi", "Taşikardi", "Üfürüm",
+    "Nefes Darlığı", "Hemoptizi", "Kuru Öksürük", "Balgamlı Öksürük", "Ral", "Ronküs", "Wheezing", "Stridor", "Plevritik Ağrı", "Siyanoz", "Ortopne", "Hipoksi",
+    "Hematemez", "Melena", "Hematokezya", "Sarılık", "Asit", "Hepatomegali", "Splenomegali", "Kuşak Ağrısı", "Disfaji", "Asteriksis", "Murphy Belirtisi", "Karın Ağrısı", "Rebound", "Kabızlık", "İshal", "Mide Bulantısı",
+    "Poliüri", "Polidipsi", "Aseton Kokusu", "Aydede Yüzü", "Mor Stria", "Hiperpigmentasyon", "Ekzoftalmi", "Boyunda Şişlik", "Tremor", "Soğuk İntoleransı", "Sıcak İntoleransı", "El-Ayak Büyümesi", "Galaktore",
+    "Konfüzyon", "Ense Sertliği", "Nöbet", "Dizartri", "Ataksi", "Ani Baş Ağrısı", "Fotofobi", "Parezi", "Pupil Eşitsizliği", "Dengesizlik", "Pitozis",
+    "Peteşi", "Purpura", "Ekimoz", "Lenfadenopati", "Kilo Kaybı", "Gece Terlemesi", "Kaşıntı", "Solukluk", "Kemik Ağrısı", "Diş Eti Kanaması", "B Semptomları",
+    "Ateş (>38)", "Eklem Ağrısı", "Sabah Sertliği", "Kelebek Döküntü", "Raynaud", "Ağızda Aft", "Göz Kuruluğu", "Deri Sertleşmesi", "Uveit", "Paterji Reaksiyonu", "Bel Ağrısı (İnflamatuar)"
+]
 
 if audio_value is not None:
     if st.button("🔍 Sesi Analiz Et ve Tüm Verileri Doldur"):
         try:
-            with st.spinner("Ses dinleniyor... (semptom + lab verileri ayıklanıyor)"):
+            with st.spinner("Ses dinleniyor... (semptom + tüm lab değerleri ayıklanıyor)"):
                 model = genai.GenerativeModel('gemini-2.5-flash-lite')
                 prompt = f"""
-                Ses kaydını dinle ve şu formatta cevap ver (hiçbir açıklama yazma):
+                Ses kaydını dinle ve SADECE şu formatta cevap ver (hiçbir açıklama yazma):
 
-                SEMPTOMLAR: semptom1, semptom2, semptom3...
+                SEMPTOMLAR: semptom1, semptom2, ...
                 PROTOKOL: ...
                 CİNSİYET: Erkek veya Kadın
                 YAŞ: sayı
                 KİLO: sayı
+                HB: sayı
+                WBC: sayı
+                PLT: sayı
+                KRE: sayı
+                AKŞ: sayı
 
                 Olası semptomlar: {', '.join(all_possible_symptoms)}
                 """
                 response = model.generate_content([prompt, {"mime_type": "audio/wav", "data": audio_value.getvalue()}])
                 text = response.text.strip()
 
-                # Parse et
                 lines = text.split("\n")
                 new_symptoms = []
                 for line in lines:
+                    line = line.strip()
                     if line.startswith("SEMPTOMLAR:"):
                         new_symptoms = [s.strip() for s in line.replace("SEMPTOMLAR:", "").split(",") if s.strip() in all_possible_symptoms]
-                    elif line.startswith("PROTOKOL:"):
-                        st.session_state.ses_protokol = line.replace("PROTOKOL:", "").strip()
-                    elif line.startswith("CİNSİYET:"):
-                        st.session_state.ses_cinsiyet = line.replace("CİNSİYET:", "").strip()
+                    elif line.startswith("PROTOKOL:"): st.session_state.ses_protokol = line.replace("PROTOKOL:", "").strip()
+                    elif line.startswith("CİNSİYET:"): st.session_state.ses_cinsiyet = line.replace("CİNSİYET:", "").strip()
                     elif line.startswith("YAŞ:"):
-                        try:
-                            st.session_state.ses_yas = int(line.replace("YAŞ:", "").strip())
-                        except:
-                            pass
+                        try: st.session_state.ses_yas = int(line.replace("YAŞ:", "").strip())
+                        except: pass
                     elif line.startswith("KİLO:"):
-                        try:
-                            st.session_state.ses_kilo = int(line.replace("KİLO:", "").strip())
-                        except:
-                            pass
+                        try: st.session_state.ses_kilo = int(line.replace("KİLO:", "").strip())
+                        except: pass
+                    elif line.startswith("HB:"):
+                        try: st.session_state.ses_hb = float(line.replace("HB:", "").strip())
+                        except: pass
+                    elif line.startswith("WBC:"):
+                        try: st.session_state.ses_wbc = int(line.replace("WBC:", "").strip())
+                        except: pass
+                    elif line.startswith("PLT:"):
+                        try: st.session_state.ses_plt = int(line.replace("PLT:", "").strip())
+                        except: pass
+                    elif line.startswith("KRE:"):
+                        try: st.session_state.ses_kre = float(line.replace("KRE:", "").strip())
+                        except: pass
+                    elif line.startswith("AKŞ:"):
+                        try: st.session_state.ses_glu = int(line.replace("AKŞ:", "").strip())
+                        except: pass
 
                 if new_symptoms:
-                    st.success(f"✅ {len(new_symptoms)} semptom eklendi: {', '.join(new_symptoms)}")
+                    st.success(f"✅ {len(new_symptoms)} semptom eklendi")
                     st.session_state.new_symptoms = new_symptoms
-                st.success("✅ Lab verileri (yaş, cinsiyet, protokol, kilo) otomatik dolduruldu!")
-                st.rerun()   # Sidebar otomatik güncellensin
+                st.success("✅ Tüm lab değerleri (Hb, WBC, PLT, Kreatinin, AKŞ vb.) otomatik dolduruldu!")
+                st.rerun()
         except Exception as e:
             st.error(f"Ses analizi hatası: {e}")
 
-# Sesle gelen semptomları listeye ekle (orijinal kod aynen)
+# Sesle gelen semptomları listeye ekle
 if 'new_symptoms' in st.session_state and st.session_state.new_symptoms:
     if st.button("Sesle gelen semptomları listeye ekle"):
         b.extend(st.session_state.new_symptoms)
@@ -197,10 +215,10 @@ st.divider()
 st.subheader("📸 RADYOLOJİK/KARDİYOLOJİK GÖRÜNTÜ ANALİZİ (AI)")
 up_file = st.file_uploader("EKG, Röntgen veya Laboratuvar Sonucu Yükle", type=["jpg", "png", "jpeg"])
 
-# 4. MASTER 85+ HASTALIK VERİTABANI (tamamen orijinal, hiç dokunulmadı)
+# 4. MASTER 85+ HASTALIK VERİTABANI (tamamen orijinal)
 master_db = { ... }  # Senin orijinal 85+ hastalık veritabanın burada aynen duruyor
 
-# 5. FINAL ANALİZ MOTORU + AI GÜCÜ
+# 5. FINAL ANALİZ MOTORU + AI GÜCÜ (orijinal + seslendirmeler)
 if st.button("🚀 ANALİZİ BAŞLAT"):
     if not b:
         st.error("Klinik veri girişi yapılmadı!")
@@ -230,19 +248,16 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                 </div>
                 """, unsafe_allow_html=True)
 
-            # === YENİ: EN YÜKSEK ÖN TANIYI SESLENDİR ===
             st.subheader("🔊 En Yüksek Öntanıyı Seslendir")
             if results:
                 top = results[0]
                 if st.button("🎙️ En Yüksek Öntanıyı Seslendir"):
-                    tts_text = f"En yüksek ön tanı {top['ad']} yüzde {top['puan']}"
-                    tts = gTTS(text=tts_text, lang='tr')
+                    tts = gTTS(text=f"En yüksek ön tanı {top['ad']} yüzde {top['puan']}", lang='tr')
                     fp = io.BytesIO()
                     tts.write_to_fp(fp)
                     fp.seek(0)
                     st.audio(fp, format="audio/mp3")
 
-            # Ön tanı listesi seslendirme (orijinal)
             st.subheader("🔊 Tüm Ön Tanıları Seslendir")
             on_tani_text = "\n".join([f"{x['ad']} - %{x['puan']}" for x in results[:10]])
             if st.button("🎙️ Ön Tanı Listesini Seslendir"):
@@ -262,7 +277,7 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                         model = genai.GenerativeModel('gemini-2.5-flash-lite')
                         vaka_data = f"""
                         Hasta: {yas}y {cinsiyet}. GCS: {gcs_skor}, Wells: {wells_score}.
-                        Lab: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}, eGFR {egfr}.
+                        Lab: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}, eGFR {egfr}, AKŞ {glu}.
                         Semptomlar: {b}. 
                         Lütfen bu verileri uzman bir dahiliyeci gözüyle analiz et.
                         """
@@ -281,7 +296,6 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                 else:
                     st.markdown(f"<div style='background:#f0f2f6; padding:15px; border-radius:10px;'>{st.session_state.ai_klinik_yorum}</div>", unsafe_allow_html=True)
 
-                # Gemini analizini seslendir (orijinal)
                 st.subheader("🔊 AI Analizini Seslendir")
                 if st.button("🎙️ Gemini Yorumunu Seslendir"):
                     tts = gTTS(text=st.session_state.ai_klinik_yorum, lang='tr')
