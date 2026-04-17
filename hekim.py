@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 import google.generativeai as genai
 from PIL import Image
-# YENİ KÜTÜPHANE EKLENDİ
+# --- YENİ EKLEME (BOZMADAN) ---
 from streamlit_mic_recorder import mic_recorder
 
 # --- 1. PREMIUM UI ARCHITECTURE (İSMAİL ORHAN | V30 TITANIC-GENDER) ---
@@ -14,6 +14,7 @@ try:
 except:
     st.error("Secrets'da 'GEMINI_API_KEY' bulunamadı!")
 
+# CACHE İÇİN
 if 'ai_klinik_yorum' not in st.session_state:
     st.session_state.ai_klinik_yorum = None
 
@@ -48,36 +49,35 @@ st.markdown("""
 
 st.markdown("<div class='main-header'><h1>DAHİLİYE KLİNİK KARAR ROBOTU</h1><p>GELİŞTİRİCİ: İSMAİL ORHAN </p></div>", unsafe_allow_html=True)
 
-# 2. LABORATUVAR TERMİNALİ (V30 + SESLİ KOMUT)
+# 2. LABORATUVAR TERMİNALİ
 with st.sidebar:
     st.markdown("### 🏛️ LABORATUVAR VERİ MERKEZİ")
     
-    # === YENİ: SESLİ GİRİŞ BİLEŞENİ ===
-    st.subheader("🎤 SESLİ VERİ GİRİŞİ")
-    audio = mic_recorder(start_prompt="Konuşmaya Başla", stop_prompt="Kaydı Bitir", key='recorder')
+    # --- YENİ SES ÖZELLİĞİ BURAYA EKLENDİ ---
+    st.subheader("🎤 SESLİ ASİSTAN (V31)")
+    audio_data = mic_recorder(start_prompt="Sesli Veri Gir", stop_prompt="Kaydı Bitir", key='sidebar_mic')
     
-    if audio:
-        st.info("Ses işleniyor...")
+    if audio_data:
         try:
-            # Ses dosyasını Gemini'ye gönderip verileri ayıklatıyoruz
-            model_speech = genai.GenerativeModel('gemini-1.5-flash')
-            response = model_speech.generate_content([
-                "Bu ses kaydını dinle. İçindeki tıbbi değerleri (Hb, WBC, Kreatinin, Yaş, Cinsiyet vb.) ayıkla ve sadece anahtar-değer şeklinde listele.", 
-                {"mime_type": "audio/wav", "data": audio['bytes']}
-            ])
-            st.write("Algılanan Veriler:")
-            st.code(response.text)
-            st.success("Yukarıdaki değerleri manuel girişlere uygulayabilirsiniz.")
+            with st.spinner("Ses analiz ediliyor..."):
+                model_voice = genai.GenerativeModel('gemini-1.5-flash')
+                # Ses dosyasını doğrudan Gemini'ye gönderiyoruz
+                voice_response = model_voice.generate_content([
+                    "Bu tıbbi ses kaydını analiz et ve içindeki yaş, cinsiyet, laboratuvar değerlerini metin olarak özetle.",
+                    {"mime_type": "audio/wav", "data": audio_data['bytes']}
+                ])
+                st.success("Ses Algılandı!")
+                st.write(voice_response.text)
         except Exception as e:
-            st.error(f"Ses İşleme Hatası: {e}")
+            st.error(f"Mikrofon Hatası: {e}")
     st.divider()
 
     p_no = st.text_input("Protokol No", "İSMAİL-V30-FINAL")
     cinsiyet = st.radio("Cinsiyet", ["Erkek", "Kadın"])
     yas = st.number_input("Yaş", 0, 120, 45)
     kilo = st.number_input("Kilo (kg)", 5, 250, 85)
-    
     st.divider()
+    
     st.subheader("🧠 GKS DEĞERLENDİRMESİ")
     g_e = st.selectbox("Göz (E)", [4, 3, 2, 1], format_func=lambda x: f"{x}: {['Yok','Ağrıyla','Sesle','Spontan'][x-1]}")
     g_v = st.selectbox("Sözel (V)", [5, 4, 3, 2, 1], format_func=lambda x: f"{x}: {['Yok','Anlamsız Ses','Uygunsuz Kelime','Konfüze','Oryante'][x-1]}")
@@ -87,7 +87,10 @@ with st.sidebar:
 
     st.divider()
     st.subheader("📊 WELLS SKORU")
-    w_inputs = [st.checkbox(k) for k in ["Aktif Kanser (+1)", "Paralizi (+1)", "Yatak >3g (+1)", "Venöz Hassasiyet (+1)", "Bacak Şişliği (+1)", "Baldır >3cm (+1)", "Gode Ödem (+1)", "Kollateral Ven (+1)", "Alternatif Tanı Düşük (+1)"]]
+    w_labels = ["Aktif Kanser (+1)", "Paralizi/İmmobilizasyon (+1)", "Yatak Bağımlılığı >3 Gün (+1)", 
+                "Venöz Hassasiyet (+1)", "Tüm Bacakta Şişlik (+1)", "Baldır Şişliği >3cm (+1)", 
+                "Gode Bırakan Ödem (+1)", "Kollateral Venler (+1)", "Alternatif Tanı Olasılığı Düşük (+1)"]
+    w_inputs = [st.checkbox(label) for label in w_labels]
     wells_score = sum(w_inputs)
     st.warning(f"Wells Skoru: {wells_score}")
 
@@ -137,11 +140,10 @@ st.divider()
 st.subheader("📸 RADYOLOJİK/KARDİYOLOJİK GÖRÜNTÜ ANALİZİ (AI)")
 up_file = st.file_uploader("EKG, Röntgen veya Laboratuvar Sonucu Yükle", type=["jpg", "png", "jpeg"])
 
-# 4. MASTER 85+ HASTALIK VERİTABANI
-# Senin 85 hastalığının tamamı burada (kod kısalığı için özetlendi ama senin dosyanda tam kalacak)
+# 4. MASTER 85+ HASTALIK VERİTABANI (BURAYI SENİN DOSYANDAN KOPYALADIĞIN GİBİ BIRAK)
+# Not: Ben örnek olsun diye 2 tane bıraktım, sen kendi tam listeni buraya yapıştır.
 master_db = {
     "STEMI": {"b": ["Göğüs Ağrısı", "Kola Yayılan Ağrı", "Kardiyak İskemi", "Terleme", "Taşikardi"], "t": "EKG + Troponin", "ted": "ASA 300mg + Klopidogrel 600mg + IV Heparin + Acil Anjiyo."},
-    # ... BURAYA SENİN TÜM HASTALIKLARIN GELECEK ...
     "Sarkoidoz": {"b": ["Nefes Darlığı", "Lenfadenopati", "Uveit", "Kuru Öksürük"], "t": "ACE + Akciğer Grafisi", "ted": "Oral Steroid."},
 }
 
@@ -179,20 +181,27 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
             st.markdown("### 📝 EPİKRİZ VE AI ANALİZİ")
             st.info("🤖 Gemini AI Klinik Yorumu:")
             
-            try:
-                # Kota koruması için session state kullanımı
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                vaka_data = f"Hasta: {yas}y {cinsiyet}. GCS: {gcs_skor}, Wells: {wells_score}. Lab: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}, eGFR {egfr}. Semptomlar: {b}."
-                
-                if up_file:
-                    img = Image.open(up_file)
-                    ai_res = model.generate_content([vaka_data, img])
-                else:
-                    ai_res = model.generate_content(vaka_data)
-                
-                st.markdown(f"<div style='background:#f0f2f6; padding:15px; border-radius:10px;'>{ai_res.text}</div>", unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"AI Hatası: {e}")
+            if st.session_state.ai_klinik_yorum is None:
+                try:
+                    with st.spinner("Gemini analiz ediyor..."):
+                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        vaka_data = f"""
+                        Hasta: {yas}y {cinsiyet}. GCS: {gcs_skor}, Wells: {wells_score}.
+                        Lab: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}, eGFR {egfr}.
+                        Semptomlar: {b}. 
+                        Lütfen bu verileri uzman bir dahiliyeci gözüyle analiz et.
+                        """
+                        if up_file:
+                            img = Image.open(up_file)
+                            ai_res = model.generate_content([vaka_data, img])
+                        else:
+                            ai_res = model.generate_content(vaka_data)
+                        st.session_state.ai_klinik_yorum = ai_res.text
+                except Exception as e:
+                    st.session_state.ai_klinik_yorum = f"❌ AI Hatası: {str(e)}"
+            
+            if st.session_state.ai_klinik_yorum:
+                st.markdown(f"<div style='background:#f0f2f6; padding:15px; border-radius:10px;'>{st.session_state.ai_klinik_yorum}</div>", unsafe_allow_html=True)
 
             st.divider()
             epi = f"""DAHİLİYE KLİNİK KARAR ROBOTU\n---------------------------\nPROTOKOL: {p_no}\nHASTA CİNSİYETİ: {cinsiyet}\nTARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}\nLAB: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}\nGCS: {gcs_skor}, Wells: {wells_score}\neGFR: {egfr} ml/dk\n\nBELİRTİLER:\n{", ".join(b)}\n\nÖN TANI LİSTESİ:\n{chr(10).join([f"- {x['ad']} (%{x['puan']})" for x in results[:15]])}\n\nGELİŞTİRİCİ: İSMAİL ORHAN\n---------------------------"""
