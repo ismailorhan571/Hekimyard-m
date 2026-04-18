@@ -17,8 +17,8 @@ except:
 if 'ai_klinik_yorum' not in st.session_state: st.session_state.ai_klinik_yorum = None
 if 'top_tani_seslendirildi' not in st.session_state: st.session_state.top_tani_seslendirildi = False
 if 'voice_symptoms' not in st.session_state: st.session_state.voice_symptoms = []
-if 'selected_symptoms' not in st.session_state: st.session_state.selected_symptoms = []   # ← sesle bulunan semptomları multiselect'te otomatik işaretlemek için
-if 'gemini_audio' not in st.session_state: st.session_state.gemini_audio = None        # ← Gemini seslendirme hatasını önlemek için
+if 'selected_symptoms' not in st.session_state: st.session_state.selected_symptoms = []
+if 'gemini_audio_bytes' not in st.session_state: st.session_state.gemini_audio_bytes = None
 if 'ses_protokol' not in st.session_state: st.session_state.ses_protokol = "İSMAİL ORHAN"
 if 'ses_cinsiyet' not in st.session_state: st.session_state.ses_cinsiyet = "Erkek"
 if 'ses_yas' not in st.session_state: st.session_state.ses_yas = 45
@@ -135,7 +135,6 @@ if audio_value is not None:
                     line = line.strip()
                     upper_line = line.upper()
 
-                    # Hasta adı (çok daha esnek)
                     if any(k in upper_line for k in ["ADSOYAD", "AD SOYAD", "HATA ADI", "HASTA ADI", "İSİM", "AD:"]):
                         if ":" in line:
                             value = line.split(":", 1)[1].strip()
@@ -176,7 +175,7 @@ if audio_value is not None:
         except Exception as e:
             st.error(f"Ses analizi hatası: {e}")
 
-# SESLE GELEN SEMPTOMLARIN ÖNİZLEMESİ (yeşil kutu + Değiştir + Listeye Ekle)
+# SESLE GELEN SEMPTOMLARIN ÖNİZLEMESİ
 if st.session_state.voice_symptoms:
     st.subheader("🟢 Algılanan Semptomlar")
     st.markdown(f"<div style='background:#d4edda; padding:20px; border-radius:15px; color:#155724; font-weight:600;'>"
@@ -190,7 +189,6 @@ if st.session_state.voice_symptoms:
             st.rerun()
     with col2:
         if st.button("✅ Listeye Ekle"):
-            # Sesle bulunan semptomları kalıcı olarak seçili yap (multiselect'te otomatik işaretlensin)
             for s in st.session_state.voice_symptoms:
                 if s not in st.session_state.selected_symptoms:
                     st.session_state.selected_symptoms.append(s)
@@ -201,23 +199,14 @@ if st.session_state.voice_symptoms:
 st.subheader("🔍 Klinik Semptom ve Fizik Muayene Bulguları")
 t1, t2, t3, t4, t5, t6, t7 = st.tabs(["🫀 KARDİYO", "🫁 PULMONER", "🤢 GİS-KC", "🧪 ENDOKRİN", "🧠 NÖROLOJİ", "🩸 HEMATO-ONKO", "🧬 ROMATO-ENF"])
 
-# Tab seçeneklerini tek seferde tanımlıyoruz → sesle bulunanlar otomatik işaretlensin
-kv_options = ["Göğüs Ağrısı", "Sırt Ağrısı (Yırtılır)", "Kola Yayılan Ağrı", "Çarpıntı", "Hipotansiyon", "Senkop", "Bilateral Ödem", "Boyun Ven Dolgunluğu", "S3/S4 Sesi", "Bradikardi", "Taşikardi", "Üfürüm"]
-pulm_options = ["Nefes Darlığı", "Hemoptizi", "Kuru Öksürük", "Balgamlı Öksürük", "Ral", "Ronküs", "Wheezing", "Stridor", "Plevritik Ağrı", "Siyanoz", "Ortopne", "Hipoksi"]
-gis_options = ["Hematemez", "Melena", "Hematokezya", "Sarılık", "Asit", "Hepatomegali", "Splenomegali", "Kuşak Ağrısı", "Disfaji", "Asteriksis", "Murphy Belirtisi", "Karın Ağrısı", "Rebound", "Kabızlık", "İshal", "Mide Bulantısı"]
-endo_options = ["Poliüri", "Polidipsi", "Aseton Kokusu", "Aydede Yüzü", "Mor Stria", "Hiperpigmentasyon", "Ekzoftalmi", "Boyunda Şişlik", "Tremor", "Soğuk İntoleransı", "Sıcak İntoleransı", "El-Ayak Büyümesi", "Galaktore"]
-noro_options = ["Konfüzyon", "Ense Sertliği", "Nöbet", "Dizartri", "Ataksi", "Ani Baş Ağrısı", "Fotofobi", "Parezi", "Pupil Eşitsizliği", "Dengesizlik", "Pitozis"]
-hem_options = ["Peteşi", "Purpura", "Ekimoz", "Lenfadenopati", "Kilo Kaybı", "Gece Terlemesi", "Kaşıntı", "Solukluk", "Kemik Ağrısı", "Diş Eti Kanaması", "B Semptomları"]
-rom_options = ["Ateş (>38)", "Eklem Ağrısı", "Sabah Sertliği", "Kelebek Döküntü", "Raynaud", "Ağızda Aft", "Göz Kuruluğu", "Deri Sertleşmesi", "Uveit", "Paterji Reaksiyonu", "Bel Ağrısı (İnflamatuar)"]
-
 b = []
-with t1: b.extend(st.multiselect("KV", kv_options, default=[s for s in st.session_state.selected_symptoms if s in kv_options]))
-with t2: b.extend(st.multiselect("PULM", pulm_options, default=[s for s in st.session_state.selected_symptoms if s in pulm_options]))
-with t3: b.extend(st.multiselect("GİS", gis_options, default=[s for s in st.session_state.selected_symptoms if s in gis_options]))
-with t4: b.extend(st.multiselect("ENDO", endo_options, default=[s for s in st.session_state.selected_symptoms if s in endo_options]))
-with t5: b.extend(st.multiselect("NÖRO", noro_options, default=[s for s in st.session_state.selected_symptoms if s in noro_options]))
-with t6: b.extend(st.multiselect("HEM", hem_options, default=[s for s in st.session_state.selected_symptoms if s in hem_options]))
-with t7: b.extend(st.multiselect("ROM", rom_options, default=[s for s in st.session_state.selected_symptoms if s in rom_options]))
+with t1: b.extend(st.multiselect("KV", ["Göğüs Ağrısı", "Sırt Ağrısı (Yırtılır)", "Kola Yayılan Ağrı", "Çarpıntı", "Hipotansiyon", "Senkop", "Bilateral Ödem", "Boyun Ven Dolgunluğu", "S3/S4 Sesi", "Bradikardi", "Taşikardi", "Üfürüm"], default=[s for s in st.session_state.selected_symptoms if s in ["Göğüs Ağrısı", "Sırt Ağrısı (Yırtılır)", "Kola Yayılan Ağrı", "Çarpıntı", "Hipotansiyon", "Senkop", "Bilateral Ödem", "Boyun Ven Dolgunluğu", "S3/S4 Sesi", "Bradikardi", "Taşikardi", "Üfürüm"]]))
+with t2: b.extend(st.multiselect("PULM", ["Nefes Darlığı", "Hemoptizi", "Kuru Öksürük", "Balgamlı Öksürük", "Ral", "Ronküs", "Wheezing", "Stridor", "Plevritik Ağrı", "Siyanoz", "Ortopne", "Hipoksi"], default=[s for s in st.session_state.selected_symptoms if s in ["Nefes Darlığı", "Hemoptizi", "Kuru Öksürük", "Balgamlı Öksürük", "Ral", "Ronküs", "Wheezing", "Stridor", "Plevritik Ağrı", "Siyanoz", "Ortopne", "Hipoksi"]]))
+with t3: b.extend(st.multiselect("GİS", ["Hematemez", "Melena", "Hematokezya", "Sarılık", "Asit", "Hepatomegali", "Splenomegali", "Kuşak Ağrısı", "Disfaji", "Asteriksis", "Murphy Belirtisi", "Karın Ağrısı", "Rebound", "Kabızlık", "İshal", "Mide Bulantısı"], default=[s for s in st.session_state.selected_symptoms if s in ["Hematemez", "Melena", "Hematokezya", "Sarılık", "Asit", "Hepatomegali", "Splenomegali", "Kuşak Ağrısı", "Disfaji", "Asteriksis", "Murphy Belirtisi", "Karın Ağrısı", "Rebound", "Kabızlık", "İshal", "Mide Bulantısı"]]))
+with t4: b.extend(st.multiselect("ENDO", ["Poliüri", "Polidipsi", "Aseton Kokusu", "Aydede Yüzü", "Mor Stria", "Hiperpigmentasyon", "Ekzoftalmi", "Boyunda Şişlik", "Tremor", "Soğuk İntoleransı", "Sıcak İntoleransı", "El-Ayak Büyümesi", "Galaktore"], default=[s for s in st.session_state.selected_symptoms if s in ["Poliüri", "Polidipsi", "Aseton Kokusu", "Aydede Yüzü", "Mor Stria", "Hiperpigmentasyon", "Ekzoftalmi", "Boyunda Şişlik", "Tremor", "Soğuk İntoleransı", "Sıcak İntoleransı", "El-Ayak Büyümesi", "Galaktore"]]))
+with t5: b.extend(st.multiselect("NÖRO", ["Konfüzyon", "Ense Sertliği", "Nöbet", "Dizartri", "Ataksi", "Ani Baş Ağrısı", "Fotofobi", "Parezi", "Pupil Eşitsizliği", "Dengesizlik", "Pitozis"], default=[s for s in st.session_state.selected_symptoms if s in ["Konfüzyon", "Ense Sertliği", "Nöbet", "Dizartri", "Ataksi", "Ani Baş Ağrısı", "Fotofobi", "Parezi", "Pupil Eşitsizliği", "Dengesizlik", "Pitozis"]]))
+with t6: b.extend(st.multiselect("HEM", ["Peteşi", "Purpura", "Ekimoz", "Lenfadenopati", "Kilo Kaybı", "Gece Terlemesi", "Kaşıntı", "Solukluk", "Kemik Ağrısı", "Diş Eti Kanaması", "B Semptomları"], default=[s for s in st.session_state.selected_symptoms if s in ["Peteşi", "Purpura", "Ekimoz", "Lenfadenopati", "Kilo Kaybı", "Gece Terlemesi", "Kaşıntı", "Solukluk", "Kemik Ağrısı", "Diş Eti Kanaması", "B Semptomları"]]))
+with t7: b.extend(st.multiselect("ROM", ["Ateş (>38)", "Eklem Ağrısı", "Sabah Sertliği", "Kelebek Döküntü", "Raynaud", "Ağızda Aft", "Göz Kuruluğu", "Deri Sertleşmesi", "Uveit", "Paterji Reaksiyonu", "Bel Ağrısı (İnflamatuar)"], default=[s for s in st.session_state.selected_symptoms if s in ["Ateş (>38)", "Eklem Ağrısı", "Sabah Sertliği", "Kelebek Döküntü", "Raynaud", "Ağızda Aft", "Göz Kuruluğu", "Deri Sertleşmesi", "Uveit", "Paterji Reaksiyonu", "Bel Ağrısı (İnflamatuar)"]]))
 
 # Sesle gelen semptomları buraya ekle
 b.extend(st.session_state.voice_symptoms)
@@ -392,16 +381,16 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                             ai_res = model.generate_content(vaka_data)
                         st.session_state.ai_klinik_yorum = ai_res.text
                         
-                        # Gemini seslendirmesini BURADA tek seferde oluştur (sayfa restart olmasın)
+                        # Ses dosyasını hemen oluştur ve session_state'e kaydet (restart olmasın)
                         try:
                             tts = gTTS(text=st.session_state.ai_klinik_yorum, lang='tr')
                             fp = io.BytesIO()
                             tts.write_to_fp(fp)
                             fp.seek(0)
-                            st.session_state.gemini_audio = fp.getvalue()
-                        except:
-                            st.session_state.gemini_audio = None
-                            
+                            st.session_state.gemini_audio_bytes = fp.getvalue()
+                        except Exception as tts_e:
+                            st.session_state.gemini_audio_bytes = None
+                            st.warning("Ses dosyası oluşturulamadı ama yorum gösterilecek.")
                 except Exception as e:
                     st.session_state.ai_klinik_yorum = f"❌ AI Hatası: {str(e)}\n\n30-60 saniye bekleyip tekrar deneyin."
             
@@ -413,10 +402,10 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
 
                 st.subheader("🔊 AI Analizini Seslendir")
                 if st.button("🎙️ Gemini Yorumunu Seslendir"):
-                    if st.session_state.get('gemini_audio'):
-                        st.audio(st.session_state.gemini_audio, format="audio/mp3")
+                    if st.session_state.gemini_audio_bytes:
+                        st.audio(st.session_state.gemini_audio_bytes, format="audio/mp3")
                     else:
-                        st.warning("Seslendirme şu anda kullanılamıyor.")
+                        st.warning("Seslendirme şu anda kullanılamıyor. Tekrar analiz yapmayı deneyin.")
 
             st.divider()
             epi = f"""DAHİLİYE KLİNİK KARAR ROBOTU\n---------------------------\nAD SOYAD: {p_no}\nHASTA CİNSİYETİ: {cinsiyet}\nTARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}\nLAB: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}\nGCS: {gcs_skor}, Wells: {wells_score}\neGFR: {egfr} ml/dk\n\nBELİRTİLER:\n{", ".join(b)}\n\nÖN TANI LİSTESİ:\n{chr(10).join([f"- {x['ad']} (%{x['puan']})" for x in results[:15]])}\n\nGELİŞTİRİCİ: İSMAİL ORHAN\n---------------------------"""
