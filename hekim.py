@@ -49,7 +49,7 @@ st.markdown("""
 
 st.markdown("<div class='main-header'><h1>DAHİLİYE KLİNİK KARAR ROBOTU</h1><p>GELİŞTİRİCİ: İSMAİL ORHAN </p></div>", unsafe_allow_html=True)
 
-# Sidebar (tamamen aynı)
+# Sidebar
 with st.sidebar:
     st.markdown("### 🏛️ LABORATUVAR VERİ MERKEZİ")
     p_no = st.text_input("Ad Soyad", value=st.session_state.ses_protokol)
@@ -90,7 +90,7 @@ with st.sidebar:
     else: egfr = 0
     st.metric("eGFR Skoru", f"{egfr} ml/dk")
 
-# Ses ile giriş (tamamen aynı)
+# Ses ile giriş
 st.subheader("🎤 Ses ile Semptom + Lab + Ad Soyad Girişi")
 audio_value = st.audio_input("Ses kaydı yapın")
 
@@ -226,7 +226,7 @@ st.divider()
 st.subheader("📸 RADYOLOJİK/KARDİYOLOJİK GÖRÜNTÜ ANALİZİ (AI)")
 up_file = st.file_uploader("EKG, Röntgen veya Laboratuvar Sonucu Yükle", type=["jpg", "png", "jpeg"])
 
-# MASTER DB - TAM LİSTE (orijinal haliyle)
+# MASTER DB - TAM LİSTE (orijinal haliyle tamamen aynı)
 master_db = {
     "STEMI": {"b": ["Göğüs Ağrısı", "Kola Yayılan Ağrı", "Kardiyak İskemi", "Terleme", "Taşikardi"], "t": "EKG + Troponin", "ted": "ASA 300mg + Klopidogrel 600mg + IV Heparin + Acil Anjiyo."},
     "NSTEMI": {"b": ["Göğüs Ağrısı", "Kardiyak İskemi", "Bulantı", "Nefes Darlığı"], "t": "Seri Troponin + EKG", "ted": "Enoksaparin 1mg/kg SC + ASA + Beta Bloker."},
@@ -345,6 +345,7 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                 </div>
                 """, unsafe_allow_html=True)
 
+            # En yüksek ön tanıyı otomatik seslendir
             if results and not st.session_state.top_tani_seslendirildi:
                 top = results[0]
                 tts_text = f"En yüksek ön tanı {top['ad']} yüzde {top['puan']}"
@@ -404,7 +405,7 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                         st.audio(st.session_state.gemini_audio_bytes, format="audio/mp3")
                         st.success("🔊 Seslendiriliyor...")
                     else:
-                        st.warning("Ses dosyası oluşturulamadı. Tekrar 'ANALİZİ BAŞLAT' butonuna basın.")
+                        st.warning("Ses dosyası oluşturulamadı. Tekrar ANALİZİ BAŞLAT butonuna basın.")
 
             st.divider()
             epi = f"""DAHİLİYE KLİNİK KARAR ROBOTU\n---------------------------\nAD SOYAD: {p_no}\nHASTA CİNSİYETİ: {cinsiyet}\nTARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}\nLAB: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}\nGCS: {gcs_skor}, Wells: {wells_score}\neGFR: {egfr} ml/dk\n\nBELİRTİLER:\n{", ".join(b)}\n\nÖN TANI LİSTESİ:\n{chr(10).join([f"- {x['ad']} (%{x['puan']})" for x in results[:15]])}\n\nGELİŞTİRİCİ: İSMAİL ORHAN\n---------------------------"""
