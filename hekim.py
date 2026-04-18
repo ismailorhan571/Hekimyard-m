@@ -158,18 +158,29 @@ if audio_value is not None:
 
                 if new_symptoms:
                     st.session_state.voice_symptoms = new_symptoms
-                    st.success(f"✅ {len(new_symptoms)} semptom algılandı.")
+                    st.success("✅ Ses analizi tamamlandı. Aşağıda algılanan semptomlar yeşil kutuda listeleniyor.")
                 st.success("✅ Ad Soyad ve lab değerleri dolduruldu!")
                 st.rerun()
         except Exception as e:
             st.error(f"Ses analizi hatası: {e}")
 
-# Sesle gelen semptomları butonla ekle
+# SESLE GELEN SEMPTOMLARIN ÖNİZLEMESİ (yeşil kutu + Değiştir + Listeye Ekle)
 if st.session_state.voice_symptoms:
-    if st.button("Sesle gelen semptomları listeye ekle"):
-        b.extend(st.session_state.voice_symptoms)
-        st.success("Sesle gelen semptomlar semptom listesine eklendi!")
-        st.session_state.voice_symptoms = []
+    st.subheader("🟢 Algılanan Semptomlar")
+    st.markdown(f"<div style='background:#d4edda; padding:20px; border-radius:15px; color:#155724; font-weight:600;'>"
+                f"{', '.join(st.session_state.voice_symptoms)}"
+                f"</div>", unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🔄 Değiştir (Tekrar ses analizi yap)"):
+            st.session_state.voice_symptoms = []
+            st.rerun()
+    with col2:
+        if st.button("✅ Listeye Ekle"):
+            b.extend(st.session_state.voice_symptoms)
+            st.success("Semptomlar ana listeye eklendi!")
+            st.session_state.voice_symptoms = []
 
 # 3. KLİNİK BULGU SEÇİMİ
 st.subheader("🔍 Klinik Semptom ve Fizik Muayene Bulguları")
@@ -202,7 +213,7 @@ st.divider()
 st.subheader("📸 RADYOLOJİK/KARDİYOLOJİK GÖRÜNTÜ ANALİZİ (AI)")
 up_file = st.file_uploader("EKG, Röntgen veya Laboratuvar Sonucu Yükle", type=["jpg", "png", "jpeg"])
 
-# MASTER DB - TAM LİSTE (hiçbir şey kısaltılmadı)
+# MASTER DB - TAM LİSTE
 master_db = {
     "STEMI": {"b": ["Göğüs Ağrısı", "Kola Yayılan Ağrı", "Kardiyak İskemi", "Terleme", "Taşikardi"], "t": "EKG + Troponin", "ted": "ASA 300mg + Klopidogrel 600mg + IV Heparin + Acil Anjiyo."},
     "NSTEMI": {"b": ["Göğüs Ağrısı", "Kardiyak İskemi", "Bulantı", "Nefes Darlığı"], "t": "Seri Troponin + EKG", "ted": "Enoksaparin 1mg/kg SC + ASA + Beta Bloker."},
