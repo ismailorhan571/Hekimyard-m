@@ -226,7 +226,7 @@ st.divider()
 st.subheader("📸 RADYOLOJİK/KARDİYOLOJİK GÖRÜNTÜ ANALİZİ (AI)")
 up_file = st.file_uploader("EKG, Röntgen veya Laboratuvar Sonucu Yükle", type=["jpg", "png", "jpeg"])
 
-# MASTER DB - TAM LİSTE
+# MASTER DB - TAM LİSTE (orijinal haliyle tamamen aynı)
 master_db = {
     "STEMI": {"b": ["Göğüs Ağrısı", "Kola Yayılan Ağrı", "Kardiyak İskemi", "Terleme", "Taşikardi"], "t": "EKG + Troponin", "ted": "ASA 300mg + Klopidogrel 600mg + IV Heparin + Acil Anjiyo."},
     "NSTEMI": {"b": ["Göğüs Ağrısı", "Kardiyak İskemi", "Bulantı", "Nefes Darlığı"], "t": "Seri Troponin + EKG", "ted": "Enoksaparin 1mg/kg SC + ASA + Beta Bloker."},
@@ -345,7 +345,6 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                 </div>
                 """, unsafe_allow_html=True)
 
-            # En yüksek ön tanıyı otomatik seslendir
             if results and not st.session_state.top_tani_seslendirildi:
                 top = results[0]
                 tts_text = f"En yüksek ön tanı {top['ad']} yüzde {top['puan']}"
@@ -381,16 +380,15 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                             ai_res = model.generate_content(vaka_data)
                         st.session_state.ai_klinik_yorum = ai_res.text
                         
-                        # Ses dosyasını hemen oluştur ve session_state'e kaydet (restart olmasın)
+                        # SES DOSYASINI HEMEN OLUŞTUR VE KAYDET
                         try:
                             tts = gTTS(text=st.session_state.ai_klinik_yorum, lang='tr')
                             fp = io.BytesIO()
                             tts.write_to_fp(fp)
                             fp.seek(0)
                             st.session_state.gemini_audio_bytes = fp.getvalue()
-                        except Exception as tts_e:
+                        except:
                             st.session_state.gemini_audio_bytes = None
-                            st.warning("Ses dosyası oluşturulamadı ama yorum gösterilecek.")
                 except Exception as e:
                     st.session_state.ai_klinik_yorum = f"❌ AI Hatası: {str(e)}\n\n30-60 saniye bekleyip tekrar deneyin."
             
@@ -404,8 +402,9 @@ if st.button("🚀 ANALİZİ BAŞLAT"):
                 if st.button("🎙️ Gemini Yorumunu Seslendir"):
                     if st.session_state.gemini_audio_bytes:
                         st.audio(st.session_state.gemini_audio_bytes, format="audio/mp3")
+                        st.success("🔊 Seslendiriliyor...")
                     else:
-                        st.warning("Seslendirme şu anda kullanılamıyor. Tekrar analiz yapmayı deneyin.")
+                        st.warning("Ses dosyası oluşturulamadı. Tekrar ANALİZİ BAŞLAT butonuna basın.")
 
             st.divider()
             epi = f"""DAHİLİYE KLİNİK KARAR ROBOTU\n---------------------------\nAD SOYAD: {p_no}\nHASTA CİNSİYETİ: {cinsiyet}\nTARİH: {datetime.now().strftime('%d/%m/%Y %H:%M')}\nLAB: Hb {hb}, WBC {wbc}, PLT {plt}, Kre {kre}\nGCS: {gcs_skor}, Wells: {wells_score}\neGFR: {egfr} ml/dk\n\nBELİRTİLER:\n{", ".join(b)}\n\nÖN TANI LİSTESİ:\n{chr(10).join([f"- {x['ad']} (%{x['puan']})" for x in results[:15]])}\n\nGELİŞTİRİCİ: İSMAİL ORHAN\n---------------------------"""
