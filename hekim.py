@@ -108,7 +108,7 @@ if audio_value is not None:
             with st.spinner("Ses dinleniyor..."):
                 model = genai.GenerativeModel('gemini-2.5-flash-lite')
                 prompt = f"""
-                Ses kaydını dinle ve SADECE şu formatta cevap ver:
+                Ses kaydını dinle ve SADECE şu formatta cevap ver (hiçbir açıklama yazma):
 
                 ADSOYAD: ...
                 SEMPTOMLAR: semptom1, semptom2, ...
@@ -128,12 +128,22 @@ if audio_value is not None:
 
                 lines = text.split("\n")
                 new_symptoms = []
+
                 for line in lines:
                     line = line.strip()
-                    if line.startswith("ADSOYAD:"): st.session_state.ses_protokol = line.replace("ADSOYAD:", "").strip()
+                    upper_line = line.upper()
+
+                    # Hasta adı (çok daha esnek - Gemini farklı şekillerde yazabiliyor)
+                    if any(k in upper_line for k in ["ADSOYAD", "AD SOYAD", "HATA ADI", "HASTA ADI", "İSİM", "AD:"]):
+                        if ":" in line:
+                            value = line.split(":", 1)[1].strip()
+                            if value:
+                                st.session_state.ses_protokol = value
+
                     elif line.startswith("SEMPTOMLAR:"):
                         new_symptoms = [s.strip() for s in line.replace("SEMPTOMLAR:", "").split(",") if s.strip() in all_possible_symptoms]
-                    elif line.startswith("CİNSİYET:"): st.session_state.ses_cinsiyet = line.replace("CİNSİYET:", "").strip()
+                    elif line.startswith("CİNSİYET:"): 
+                        st.session_state.ses_cinsiyet = line.replace("CİNSİYET:", "").strip()
                     elif line.startswith("YAŞ:"):
                         try: st.session_state.ses_yas = int(line.replace("YAŞ:", "").strip())
                         except: pass
@@ -159,7 +169,7 @@ if audio_value is not None:
                 if new_symptoms:
                     st.session_state.voice_symptoms = new_symptoms
                     st.success("✅ Ses analizi tamamlandı. Aşağıda algılanan semptomlar yeşil kutuda listeleniyor.")
-                st.success("✅ Ad Soyad ve lab değerleri dolduruldu!")
+                st.success(f"✅ Ad Soyad ve lab değerleri dolduruldu! → {st.session_state.ses_protokol}")
                 st.rerun()
         except Exception as e:
             st.error(f"Ses analizi hatası: {e}")
@@ -178,8 +188,7 @@ if st.session_state.voice_symptoms:
             st.rerun()
     with col2:
         if st.button("✅ Listeye Ekle"):
-            b.extend(st.session_state.voice_symptoms)
-            st.success("Semptomlar ana listeye eklendi!")
+            st.success("✅ Semptomlar ana listeye eklendi!")
             st.session_state.voice_symptoms = []
 
 # 3. KLİNİK BULGU SEÇİMİ
@@ -248,7 +257,7 @@ master_db = {
     "Otoimmün Hepatit": {"b": ["Sarılık", "Eklem Ağrısı", "KC Hasarı", "Ateş (>38)"], "t": "ANA/ASMA + Biyopsi", "ted": "Steroid + Azatioprin."},
     "Primer Biliyer Kolanjit": {"b": ["Kaşıntı", "Sarılık", "Halsizlik", "Hepatomegali"], "t": "Anti-Mitokondriyal Antikor (AMA)", "ted": "Ursodeoksikolik Asit (UDCA)."},
     "Pankreas Kanseri": {"b": ["Sarılık", "Kuşak Ağrısı", "Kilo Kaybı", "Yeni Başlayan Diyabet"], "t": "Batın BT + CA 19-9", "ted": "Whipple Operasyonu / KT."},
-    "Mezenter İskemi": {"b": ["Şiddetli Karın Ağrısı", "Bulantı", "Hipotansiyon", "Laktat Yüksekliği"], "t": "BT Anjiyo", "ted": "Acil Cerrahi / Embolektomi."},
+    "Mezenter İskemi": {"b": ["Şiddetli Karın Ağrısı", "Bulantı", "Hipotansiyon", "Laktat Yüksekliği"], "t": "BT Anjiyo", "ted": "Acil Cerrahi / Embolektemi."},
     "Divertikülit": {"b": ["Karın Ağrısı", "Ateş (>38)", "Kabızlık", "Lökositoz"], "t": "Batın BT", "ted": "Antibiyotik + Sıvı Diyet."},
     "DKA": {"b": ["Aseton Kokusu", "Hiperglisemi", "Karın Ağrısı", "Konfüzyon", "Poliüri"], "t": "Kan Gazı + Keton", "ted": "IV SF + İnsülin İnfüzyonu + K+."},
     "Tiroid Fırtınası": {"b": ["Ateş (>38)", "Taşikardi", "Konfüzyon", "Tremor", "Sarılık"], "t": "Burch-Wartofsky Skoru", "ted": "PTU + Lugol + Beta Bloker + IV Steroid."},
